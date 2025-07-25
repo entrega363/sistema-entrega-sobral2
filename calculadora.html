@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body, #root {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        function Calculadora() {
+            const [display, setDisplay] = useState('0');
+            const [previousValue, setPreviousValue] = useState(null);
+            const [operation, setOperation] = useState(null);
+            const [waitingForOperand, setWaitingForOperand] = useState(false);
+
+            const inputNumber = (num) => {
+                if (waitingForOperand) {
+                    setDisplay(String(num));
+                    setWaitingForOperand(false);
+                } else {
+                    setDisplay(display === '0' ? String(num) : display + num);
+                }
+            };
+
+            const inputDecimal = () => {
+                if (waitingForOperand) {
+                    setDisplay('0.');
+                    setWaitingForOperand(false);
+                } else if (display.indexOf('.') === -1) {
+                    setDisplay(display + '.');
+                }
+            };
+
+            const clear = () => {
+                setDisplay('0');
+                setPreviousValue(null);
+                setOperation(null);
+                setWaitingForOperand(false);
+            };
+
+            const performOperation = (nextOperation) => {
+                const inputValue = parseFloat(display);
+
+                if (previousValue === null) {
+                    setPreviousValue(inputValue);
+                } else if (operation) {
+                    const currentValue = previousValue || 0;
+                    const newValue = calculate(currentValue, inputValue, operation);
+
+                    setDisplay(String(newValue));
+                    setPreviousValue(newValue);
+                }
+
+                setWaitingForOperand(true);
+                setOperation(nextOperation);
+            };
+
+            const calculate = (firstValue, secondValue, operation) => {
+                switch (operation) {
+                    case '+':
+                        return firstValue + secondValue;
+                    case '-':
+                        return firstValue - secondValue;
+                    case '×':
+                        return firstValue * secondValue;
+                    case '÷':
+                        return secondValue !== 0 ? firstValue / secondValue : 0;
+                    default:
+                        return secondValue;
+                }
+            };
+
+            const handleEquals = () => {
+                const inputValue = parseFloat(display);
+
+                if (previousValue !== null && operation) {
+                    const newValue = calculate(previousValue, inputValue, operation);
+                    setDisplay(String(newValue));
+                    setPreviousValue(null);
+                    setOperation(null);
+                    setWaitingForOperand(true);
+                }
+            };
+
+            const Button = ({ onClick, className = '', children, ...props }) => (
+                React.createElement('button', {
+                    onClick,
+                    className: `h-16 text-xl font-semibold rounded-lg transition-all duration-150 active:scale-95 ${className}`,
+                    ...props
+                }, children)
+            );
+
+            return React.createElement('div', {
+                className: 'max-w-sm mx-auto bg-gray-900 rounded-2xl shadow-2xl overflow-hidden'
+            }, [
+                // Header
+                React.createElement('div', {
+                    key: 'header',
+                    className: 'bg-gradient-to-r from-blue-600 to-purple-600 p-4'
+                }, React.createElement('h1', {
+                    className: 'text-white text-xl font-bold text-center'
+                }, 'Calculadora')),
+
+                // Display
+                React.createElement('div', {
+                    key: 'display',
+                    className: 'bg-black p-6'
+                }, React.createElement('div', {
+                    className: 'text-right text-white text-4xl font-light min-h-[60px] flex items-center justify-end overflow-hidden'
+                }, display)),
+
+                // Buttons
+                React.createElement('div', {
+                    key: 'buttons',
+                    className: 'p-4 grid grid-cols-4 gap-3'
+                }, [
+                    // Row 1
+                    React.createElement(Button, {
+                        key: 'clear',
+                        onClick: clear,
+                        className: 'col-span-2 bg-red-500 hover:bg-red-600 text-white'
+                    }, 'C'),
+                    React.createElement(Button, {
+                        key: 'backspace',
+                        onClick: () => setDisplay(display.slice(0, -1) || '0'),
+                        className: 'bg-gray-600 hover:bg-gray-700 text-white'
+                    }, '⌫'),
+                    React.createElement(Button, {
+                        key: 'divide',
+                        onClick: () => performOperation('÷'),
+                        className: 'bg-orange-500 hover:bg-orange-600 text-white'
+                    }, '÷'),
+
+                    // Row 2
+                    React.createElement(Button, {
+                        key: '7',
+                        onClick: () => inputNumber(7),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '7'),
+                    React.createElement(Button, {
+                        key: '8',
+                        onClick: () => inputNumber(8),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '8'),
+                    React.createElement(Button, {
+                        key: '9',
+                        onClick: () => inputNumber(9),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '9'),
+                    React.createElement(Button, {
+                        key: 'multiply',
+                        onClick: () => performOperation('×'),
+                        className: 'bg-orange-500 hover:bg-orange-600 text-white'
+                    }, '×'),
+
+                    // Row 3
+                    React.createElement(Button, {
+                        key: '4',
+                        onClick: () => inputNumber(4),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '4'),
+                    React.createElement(Button, {
+                        key: '5',
+                        onClick: () => inputNumber(5),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '5'),
+                    React.createElement(Button, {
+                        key: '6',
+                        onClick: () => inputNumber(6),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '6'),
+                    React.createElement(Button, {
+                        key: 'subtract',
+                        onClick: () => performOperation('-'),
+                        className: 'bg-orange-500 hover:bg-orange-600 text-white'
+                    }, '-'),
+
+                    // Row 4
+                    React.createElement(Button, {
+                        key: '1',
+                        onClick: () => inputNumber(1),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '1'),
+                    React.createElement(Button, {
+                        key: '2',
+                        onClick: () => inputNumber(2),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '2'),
+                    React.createElement(Button, {
+                        key: '3',
+                        onClick: () => inputNumber(3),
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '3'),
+                    React.createElement(Button, {
+                        key: 'add',
+                        onClick: () => performOperation('+'),
+                        className: 'bg-orange-500 hover:bg-orange-600 text-white'
+                    }, '+'),
+
+                    // Row 5
+                    React.createElement(Button, {
+                        key: '0',
+                        onClick: () => inputNumber(0),
+                        className: 'col-span-2 bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '0'),
+                    React.createElement(Button, {
+                        key: 'decimal',
+                        onClick: inputDecimal,
+                        className: 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }, '.'),
+                    React.createElement(Button, {
+                        key: 'equals',
+                        onClick: handleEquals,
+                        className: 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }, '=')
+                ])
+            ]);
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(Calculadora));
+    </script>
+</body>
+</html>
