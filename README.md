@@ -1,163 +1,270 @@
-# 🚚 Sistema Entrega Sobral
+# 🚚 Sistema Entrega Sobral - Plataforma Completa de Delivery
 
-Sistema completo de delivery para gerenciamento de entregadores, empresas e pedidos em Sobral-CE.
+Sistema completo de delivery para a cidade de Sobral-CE, desenvolvido com React e tecnologias modernas. Evolução completa desde versão básica até PWA premium com pagamentos online.
 
-## 📋 Sobre o Projeto
+## 🚀 Versões Disponíveis
 
-O **Sistema Entrega Sobral** é uma plataforma web completa para gerenciamento de delivery que conecta empresas, entregadores e clientes em um sistema integrado e eficiente.
+### 📱 v4.0 PWA Premium - `delivery-app-enhanced-v4.html`
+**🏆 VERSÃO MAIS AVANÇADA - PWA COMPLETO**
+- ✅ **Progressive Web App** - Instala como app nativo
+- ✅ **Pagamentos Online** - PIX (QR Code), Cartão, Dinheiro
+- ✅ **Sistema de Cupons** - BEMVINDO10, FRETE5
+- ✅ **Notificações Push** - Reais do sistema operacional
+- ✅ **Funciona Offline** - Service Workers + Cache
+- ✅ **Interface Premium** - Animações e gradientes
 
-### ✨ Funcionalidades Principais
+### 🗺️ v3.0 Premium - `delivery-app-enhanced-v3.html`
+- ✅ **Chat em Tempo Real** - Entre todos os usuários
+- ✅ **Mapas Interativos** - Leaflet.js com GPS
+- ✅ **Relatórios Avançados** - Chart.js com gráficos
+- ✅ **Notificações do Navegador** - Sistema completo
 
-- **👨‍💼 Painel Administrativo**: Aprovação de usuários, gerenciamento completo do sistema
-- **🏢 Gestão Empresarial**: Cadastro de produtos, gerenciamento de pedidos
-- **🏍️ Sistema de Entrega**: Interface para entregadores, controle de rotas
-- **🛒 Marketplace**: Catálogo de produtos, carrinho de compras, avaliações
+### 💬 v2.0 Advanced - `delivery-app-enhanced-v2.html`
+- ✅ **Sistema de Notificações** - Centro com dropdown
+- ✅ **Avaliações Completas** - Estrelas e comentários
+- ✅ **Dados Enriquecidos** - Informações detalhadas
+- ✅ **Interface Melhorada** - Loading states e feedback
 
-### 🎯 Usuários do Sistema
+### 📊 v1.0 Enhanced - `delivery-app-enhanced-v1.html`
+- ✅ **Dashboards Melhorados** - Para todos os usuários
+- ✅ **Sistema de Avaliações** - Básico funcional
+- ✅ **Interface Responsiva** - Mobile-first
+- ✅ **Dados Realistas** - Informações completas
 
-1. **Administradores**: Controle total do sistema
-2. **Empresas**: Restaurantes e estabelecimentos
-3. **Entregadores**: Profissionais de delivery
-4. **Clientes**: Consumidores finais
+### 🏠 Versão Original - `delivery-app-complete.html`
+- ✅ **Sistema Base** - Funcionalidades essenciais
+- ✅ **Multi-usuário** - Admin, Empresa, Entregador, Cliente
+- ✅ **CRUD Completo** - Pedidos e usuários
 
-## 🚀 Como Usar
+## 🎯 Funcionalidades por Versão
 
-### Acesso Rápido
-1. Abra o arquivo `index.html` no navegador
-2. Ou acesse: [Sistema Entrega Sobral](https://seu-usuario.github.io/sistema-entrega-sobral2)
+| Funcionalidade | v1.0 | v2.0 | v3.0 | v4.0 |
+|---|---|---|---|---|
+| Multi-usuário | ✅ | ✅ | ✅ | ✅ |
+| Dashboards | ✅ | ✅ | ✅ | ✅ |
+| Notificações | ❌ | ✅ | ✅ | ✅ |
+| Chat | ❌ | ❌ | ✅ | ✅ |
+| Mapas | ❌ | ❌ | ✅ | ✅ |
+| Relatórios | ❌ | ❌ | ✅ | ✅ |
+| Pagamentos | ❌ | ❌ | ❌ | ✅ |
+| PWA | ❌ | ❌ | ❌ | ✅ |
+| Cupons | ❌ | ❌ | ❌ | ✅ |
+| Offline | ❌ | ❌ | ❌ | ✅ |
 
-### Contas de Teste
+## 🔑 Credenciais de Teste
 
-| Tipo | Usuário | Senha |
-|------|---------|-------|
-| 👨‍💼 Admin | `admin` | `tenderbr0` |
-| 🏍️ Entregador | `joao@teste.com` | `123456` |
-| 🏢 Empresa | `pizza@teste.com` | `123456` |
+### 👨‍💼 Administrador
+- **Email**: admin
+- **Senha**: tenderbr0
+- **Funcionalidades**: Aprovações, relatórios, analytics
+
+### 🏢 Empresa
+- **Email**: pizza@teste.com
+- **Senha**: 123456
+- **Funcionalidades**: Gerenciar produtos, pedidos, avaliações
+
+### 🏍️ Entregador
+- **Email**: joao@teste.com
+- **Senha**: 123456
+- **Funcionalidades**: Aceitar entregas, disponibilidade, ganhos
+
+### 👤 Cliente (Melhor para testar v4.0)
+- **Email**: maria@teste.com
+- **Senha**: 123456
+- **Funcionalidades**: Marketplace, pagamentos, cupons
+
+## 💳 Sistema de Pagamentos v4.0
+
+### 📱 PIX
+- QR Code gerado automaticamente
+- Código PIX copiável
+- Simulação de confirmação
+
+### 💳 Cartão de Crédito
+- Formulário completo com validação
+- Integração com Stripe (teste)
+- Processamento simulado realista
+
+### 🎟️ Cupons de Desconto
+- **BEMVINDO10**: 10% desconto (mín. R$ 20)
+- **FRETE5**: R$ 5 desconto no frete (mín. R$ 30)
+- Sistema de validação completo
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Frontend**: React 18.2.0 (via CDN)
-- **Styling**: Tailwind CSS
-- **Estado**: localStorage + React Hooks
-- **Banco**: Supabase (configurável)
-- **Deploy**: GitHub Pages
+### Core
+- **React 18.2.0** - Framework principal
+- **Tailwind CSS** - Estilização moderna
+- **LocalStorage** - Persistência de dados
 
-## 📱 Funcionalidades por Usuário
+### v3.0+ Integrações
+- **Leaflet.js** - Mapas interativos
+- **Chart.js** - Gráficos e relatórios
 
-### 👨‍💼 Administrador
-- Aprovação de empresas e entregadores
-- Gerenciamento de usuários
-- Estatísticas do sistema
-- Controle de pedidos
+### v4.0 PWA
+- **Service Workers** - Cache e offline
+- **Web App Manifest** - Metadados PWA
+- **Stripe.js** - Pagamentos online
+- **QRCode.js** - Geração de PIX
+- **Push Notifications** - Notificações reais
 
-### 🏢 Empresas
-- Cadastro de produtos
-- Gerenciamento de pedidos
-- Controle de estoque
-- Relatórios de vendas
+## 🚀 Como Usar
 
-### 🏍️ Entregadores
-- Visualização de pedidos disponíveis
-- Aceitar/rejeitar entregas
-- Controle de status
-- Histórico de entregas
+### 🏆 Recomendado: Teste a v4.0 PWA
+1. Abra `delivery-app-enhanced-v4.html`
+2. Clique em "Instalar App" quando aparecer o banner
+3. Faça login como cliente: maria@teste.com / 123456
+4. Teste pagamentos com cupons: BEMVINDO10
+5. Receba notificações push reais
 
-### 🛒 Clientes
-- Navegação no marketplace
-- Carrinho de compras
-- Acompanhamento de pedidos
-- Sistema de avaliações
+### 📱 Instalação PWA
+1. Abra no Chrome/Edge/Safari
+2. Banner de instalação aparece automaticamente
+3. Clique em "Instalar" 
+4. App será instalado como nativo
+5. Funciona offline após instalação
 
-## 🔧 Configuração do Banco de Dados
-
-O sistema suporta múltiplos bancos de dados:
-
-- MySQL
-- PostgreSQL
-- MongoDB
-- SQLite
-- **Supabase** (recomendado)
-
-### Configuração Supabase
-
-1. Crie uma conta no [Supabase](https://supabase.com)
-2. Crie um novo projeto
-3. Configure as tabelas necessárias
-4. Atualize as credenciais em `database-config.js`
-
-## 📦 Estrutura do Projeto
-
-```
-sistema-entrega-sobral/
-├── index.html              # Página inicial com redirecionamento
-├── delivery-app.html       # Aplicação principal
-├── database-config.js      # Configuração do banco
-├── component.js           # Componente React compilado
-├── component.jsx          # Componente React fonte
-├── README.md              # Documentação
-└── .gitignore            # Arquivos ignorados pelo Git
-```
-
-## 🌐 Deploy
-
-### GitHub Pages
-1. Faça fork do repositório
-2. Vá em Settings > Pages
-3. Selecione a branch `main`
-4. Acesse via: `https://seu-usuario.github.io/sistema-entrega-sobral2`
-
-### Servidor Local
+### 🖥️ Servidor Local (Opcional)
 ```bash
 # Python
 python -m http.server 8000
 
-# Node.js
+# Node.js  
 npx serve .
 
 # PHP
 php -S localhost:8000
 ```
 
-## 🤝 Contribuindo
+## 📁 Estrutura do Projeto
 
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+```
+sistema-entrega-sobral/
+├── 📱 delivery-app-enhanced-v4.html    # PWA Premium
+├── 🗺️ delivery-app-enhanced-v3.html    # Chat + Mapas
+├── 💬 delivery-app-enhanced-v2.html    # Notificações
+├── 📊 delivery-app-enhanced-v1.html    # Dashboards
+├── 🏠 delivery-app-complete.html       # Versão base
+├── 🔐 admin-login.html                 # Login admin
+├── 📄 index.html                       # Página inicial
+├── ⚙️ database-config.js               # Config BD
+├── 🗃️ database-schema.sql              # Schema
+├── 🚀 deploy.sh / deploy.ps1           # Deploy
+└── 📖 README.md                        # Documentação
+```
 
-## 📄 Licença
+## 🎯 Funcionalidades Principais
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+### 🏆 v4.0 PWA Premium
+- 📱 **Instala como app** no celular/desktop
+- 💳 **Pagamentos reais** PIX + Cartão + Dinheiro
+- 🎟️ **Cupons funcionais** com validação
+- 🔔 **Push notifications** do SO
+- 📶 **Funciona offline** com cache
+- 🎨 **Interface premium** com animações
+
+### 🗺️ v3.0 Premium  
+- 💬 **Chat tempo real** entre usuários
+- 🗺️ **Mapas GPS** com Leaflet.js
+- 📊 **Relatórios** com Chart.js
+- 🔔 **Notificações** do navegador
+
+### 💬 v2.0 Advanced
+- 🔔 **Centro notificações** com dropdown
+- ⭐ **Sistema avaliações** completo
+- 📱 **Interface melhorada** responsiva
+- 💾 **Dados enriquecidos** realistas
+
+## 🔄 Deploy
+
+### Deploy Automático
+```bash
+# Linux/Mac
+chmod +x deploy.sh && ./deploy.sh
+
+# Windows PowerShell
+.\deploy.ps1
+```
+
+### Deploy Manual
+1. Upload arquivos para servidor web
+2. Configure HTTPS (necessário para PWA)
+3. Acesse via domínio
+
+## 📊 Banco de Dados
+
+Suporte multi-database:
+- MySQL, PostgreSQL, MongoDB, SQLite, Supabase
+- Configuração: `database-config.js`
+- Schema: `database-schema.sql`
+
+## 🎮 Como Testar Cada Versão
+
+### 🏆 v4.0 PWA (Recomendado)
+1. Abra `delivery-app-enhanced-v4.html`
+2. Login: maria@teste.com / 123456
+3. Instale como PWA
+4. Teste pagamentos + cupons
+5. Receba notificações push
+
+### 🗺️ v3.0 Premium
+1. Abra `delivery-app-enhanced-v3.html`  
+2. Login: admin / tenderbr0
+3. Teste chat, mapas, relatórios
+
+### 💬 v2.0 Advanced
+1. Abra `delivery-app-enhanced-v2.html`
+2. Teste notificações e avaliações
+
+### 📊 v1.0 Enhanced  
+1. Abra `delivery-app-enhanced-v1.html`
+2. Teste dashboards melhorados
+
+## 🌐 Acesso Online
+
+- **GitHub Pages**: [https://entrega363.github.io/sistema-entrega-sobral2/](https://entrega363.github.io/sistema-entrega-sobral2/)
+- **Versão PWA**: [delivery-app-enhanced-v4.html](https://entrega363.github.io/sistema-entrega-sobral2/delivery-app-enhanced-v4.html)
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie branch: `git checkout -b feature/NovaFuncionalidade`
+3. Commit: `git commit -m 'Add: Nova funcionalidade'`
+4. Push: `git push origin feature/NovaFuncionalidade`
+5. Pull Request
+
+## 📝 Licença
+
+MIT License - Veja [LICENSE](LICENSE) para detalhes.
 
 ## 📞 Contato
 
-- **Projeto**: Sistema Entrega Sobral
-- **Localização**: Sobral - CE, Brasil
-- **Tipo**: Sistema de Delivery
+Sistema desenvolvido para Sobral-CE com tecnologia de ponta.
 
 ---
 
-⭐ **Se este projeto foi útil para você, considere dar uma estrela!**
+⭐ **Teste a v4.0 PWA para a experiência completa!** 
 
-## 🔄 Atualizações Recentes
+🚚 Sistema profissional de delivery com pagamentos online e PWA nativo! ✨
 
-- ✅ Sistema de autenticação multi-usuário
+## 🔄 Changelog
+
+### v4.0 PWA Premium (Atual)
+- ✅ Progressive Web App completo
+- ✅ Sistema de pagamentos online
+- ✅ Cupons de desconto funcionais
+- ✅ Notificações push reais
+- ✅ Funciona offline
+
+### v3.0 Premium
+- ✅ Chat em tempo real
+- ✅ Mapas interativos
+- ✅ Relatórios avançados
+
+### v2.0 Advanced
+- ✅ Sistema de notificações
+- ✅ Avaliações completas
+
+### v1.0 Enhanced
+- ✅ Dashboards melhorados
 - ✅ Interface responsiva
-- ✅ Integração com Supabase
-- ✅ Sistema de avaliações
-- ✅ Controle de estoque
-- ✅ Relatórios em tempo real
-
-## 🎨 Screenshots
-
-*Em breve: capturas de tela das principais funcionalidades*
-
-## 🚧 Roadmap
-
-- [ ] App mobile (React Native)
-- [ ] Notificações push
-- [ ] Integração com pagamentos
-- [ ] Sistema de cupons
-- [ ] Chat em tempo real
-- [ ] Rastreamento GPS
