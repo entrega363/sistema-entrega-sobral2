@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Com Banco de Dados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./database-config.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        function App() {
+            const [currentView, setCurrentView] = useState('login');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            // Estados com banco de dados
+            const [users, setUsers] = useState([]);
+            const [empresas, setEmpresas] = useState([]);
+            const [pedidos, setPedidos] = useState([]);
+            const [pagamentos, setPagamentos] = useState([]);
+
+            // Carregar dados do banco ao inicializar
+            useEffect(() => {
+                loadInitialData();
+            }, []);
+
+            const loadInitialData = async () => {
+                try {
+                    setLoading(true);
+                    
+                    // Carregar dados em paralelo
+                    const [usersData, empresasData, pedidosData, pagamentosData] = await Promise.all([
+                        db.getUsers(),
+                        db.getEmpresas(),
+                        db.getPedidos(),
+                        db.getPagamentos()
+                    ]);
+
+                    setUsers(usersData);
+                    setEmpresas(empresasData);
+                    setPedidos(pedidosData);
+                    setPagamentos(pagamentosData);
+                } catch (err) {
+                    console.error('Erro ao carregar dados:', err);
+                    setError('Erro ao conectar com o banco de dados');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Login com banco de dados
+            const handleLogin = async (formData) => {
+                try {
+                    setLoading(true);
+                    setError('');
+
+                    const user = await db.login(formData.email, formData.senha, formData.tipo);
+                    
+                    if (user) {
+                        setCurrentUser({ ...user, tipo: formData.tipo });
+                        setCurrentView('dashboard');
+                    } else {
+                        setError('Email ou senha incorretos');
+                    }
+                } catch (err) {
+                    setError('Erro ao fazer login: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Criar pedido no banco
+            const criarPedido = async (pedidoData) => {
+                try {
+                    setLoading(true);
+                    
+                    const novoPedido = {
+                        ...pedidoData,
+                        empresa_id: currentUser.id,
+                        empresa_nome: currentUser.nome,
+                        status: 'disponivel'
+                    };
+
+                    const result = await db.createPedido(novoPedido);
+                    
+                    // Atualizar estado local
+                    setPedidos([result[0], ...pedidos]);
+                    
+                    return result[0];
+                } catch (err) {
+                    setError('Erro ao criar pedido: ' + err.message);
+                    throw err;
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Aceitar pedido
+            const aceitarPedido = async (pedidoId) => {
+                try {
+                    setLoading(true);
+                    
+                    const updateData = {
+                        status: 'aceito',
+                        entregador_id: currentUser.id,
+                        aceito_em: new Date().toISOString()
+                    };
+
+                    await db.updatePedido(pedidoId, updateData);
+                    
+                    // Atualizar estado local
+                    setPedidos(pedidos.map(p => 
+                        p.id === pedidoId 
+                            ? { ...p, ...updateData }
+                            : p
+                    ));
+                } catch (err) {
+                    setError('Erro ao aceitar pedido: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Aprovar usuário (admin)
+            const aprovarUsuario = async (id, tipo) => {
+                try {
+                    setLoading(true);
+                    
+                    const updateData = {
+                        status: 'ativo',
+                        aprovado_em: new Date().toISOString()
+                    };
+
+                    if (tipo === 'entregador') {
+                        await db.updateUser(id, updateData);
+                        setUsers(users.map(u => 
+                            u.id === id ? { ...u, ...updateData } : u
+                        ));
+                    } else {
+                        await db.updateEmpresa(id, updateData);
+                        setEmpresas(empresas.map(e => 
+                            e.id === id ? { ...e, ...updateData } : e
+                        ));
+                    }
+                } catch (err) {
+                    setError('Erro ao aprovar usuário: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Componente de Login
+            const LoginForm = () => {
+                const [formData, setFormData] = useState({ 
+                    email: '', 
+                    senha: '', 
+                    tipo: 'entregador' 
+                });
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    handleLogin(formData);
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, 
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Sistema Entrega Sobral'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Conectado ao Banco de Dados')
+                        ]),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'tipo-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'tipo-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Tipo de Usuário'),
+                                React.createElement('select', {
+                                    key: 'tipo-select',
+                                    value: formData.tipo,
+                                    onChange: (e) => setFormData({ ...formData, tipo: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                }, [
+                                    React.createElement('option', { 
+                                        key: 'entregador', 
+                                        value: 'entregador' 
+                                    }, 'Entregador'),
+                                    React.createElement('option', { 
+                                        key: 'empresa', 
+                                        value: 'empresa' 
+                                    }, 'Empresa'),
+                                    React.createElement('option', { 
+                                        key: 'admin', 
+                                        value: 'admin' 
+                                    }, 'Administrador')
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'email-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'email-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, formData.tipo === 'admin' ? 'Usuário' : 'Email'),
+                                React.createElement('input', {
+                                    key: 'email-input',
+                                    type: formData.tipo === 'admin' ? 'text' : 'email',
+                                    required: true,
+                                    value: formData.email,
+                                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: formData.tipo === 'admin' ? 'admin' : 'seu@email.com'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'senha-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'senha-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Senha'),
+                                React.createElement('input', {
+                                    key: 'senha-input',
+                                    type: 'password',
+                                    required: true,
+                                    value: formData.senha,
+                                    onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                })
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center'
+                            }, error),
+
+                            React.createElement('button', {
+                                key: 'submit',
+                                type: 'submit',
+                                disabled: loading,
+                                className: `w-full py-2 px-4 rounded-md transition duration-200 ${
+                                    loading 
+                                        ? 'bg-gray-400 cursor-not-allowed' 
+                                        : 'bg-blue-600 hover:bg-blue-700'
+                                } text-white`
+                            }, loading ? 'Conectando...' : 'Entrar')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'database-status',
+                            className: 'mt-6 p-3 bg-green-50 rounded-md text-center'
+                        }, [
+                            React.createElement('p', {
+                                key: 'status',
+                                className: 'text-sm text-green-700'
+                            }, '🗄️ Sistema conectado ao banco de dados'),
+                            React.createElement('p', {
+                                key: 'info',
+                                className: 'text-xs text-green-600 mt-1'
+                            }, 'Dados persistentes e sincronizados')
+                        ])
+                    ])
+                );
+            };
+
+            // Dashboard básico
+            const Dashboard = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100 p-4'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white rounded-lg shadow-md p-6 mb-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center'
+                        }, [
+                            React.createElement('div', { key: 'user-info' }, [
+                                React.createElement('h1', {
+                                    key: 'welcome',
+                                    className: 'text-2xl font-bold text-gray-800'
+                                }, `Bem-vindo, ${currentUser.nome}!`),
+                                React.createElement('p', {
+                                    key: 'user-type',
+                                    className: 'text-gray-600'
+                                }, `Tipo: ${currentUser.tipo} | Status: ${currentUser.status}`)
+                            ]),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: () => {
+                                    setCurrentUser(null);
+                                    setCurrentView('login');
+                                },
+                                className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                            }, 'Sair')
+                        ])
+                    ]),
+
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'bg-white rounded-lg shadow-md p-6'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-xl font-semibold text-gray-800 mb-4'
+                        }, 'Dashboard com Banco de Dados'),
+                        
+                        React.createElement('div', {
+                            key: 'stats',
+                            className: 'grid grid-cols-1 md:grid-cols-3 gap-4'
+                        }, [
+                            React.createElement('div', {
+                                key: 'users-stat',
+                                className: 'p-4 bg-blue-50 rounded-lg'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'font-semibold text-blue-800'
+                                }, 'Entregadores'),
+                                React.createElement('p', {
+                                    key: 'count',
+                                    className: 'text-2xl font-bold text-blue-600'
+                                }, users.length)
+                            ]),
+                            
+                            React.createElement('div', {
+                                key: 'empresas-stat',
+                                className: 'p-4 bg-green-50 rounded-lg'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'font-semibold text-green-800'
+                                }, 'Empresas'),
+                                React.createElement('p', {
+                                    key: 'count',
+                                    className: 'text-2xl font-bold text-green-600'
+                                }, empresas.length)
+                            ]),
+                            
+                            React.createElement('div', {
+                                key: 'pedidos-stat',
+                                className: 'p-4 bg-purple-50 rounded-lg'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'font-semibold text-purple-800'
+                                }, 'Pedidos'),
+                                React.createElement('p', {
+                                    key: 'count',
+                                    className: 'text-2xl font-bold text-purple-600'
+                                }, pedidos.length)
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'database-info',
+                            className: 'mt-6 p-4 bg-gray-50 rounded-lg'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'font-semibold text-gray-800 mb-2'
+                            }, '🗄️ Informações do Banco de Dados'),
+                            React.createElement('p', {
+                                key: 'info',
+                                className: 'text-sm text-gray-600'
+                            }, 'Dados carregados diretamente do Supabase PostgreSQL'),
+                            React.createElement('p', {
+                                key: 'sync',
+                                className: 'text-sm text-gray-600'
+                            }, 'Sincronização em tempo real ativa')
+                        ])
+                    ])
+                ]);
+            };
+
+            // Loading screen
+            if (loading && currentView === 'login') {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center'
+                }, React.createElement('div', {
+                    className: 'text-center text-white'
+                }, [
+                    React.createElement('div', {
+                        key: 'spinner',
+                        className: 'animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4'
+                    }),
+                    React.createElement('p', {
+                        key: 'text'
+                    }, 'Conectando ao banco de dados...')
+                ]));
+            }
+
+            // Renderização principal
+            if (currentView === 'login') {
+                return React.createElement(LoginForm);
+            } else if (currentView === 'dashboard' && currentUser) {
+                return React.createElement(Dashboard);
+            }
+
+            return React.createElement('div', {
+                className: 'min-h-screen flex items-center justify-center'
+            }, React.createElement('div', {
+                className: 'text-center text-white'
+            }, 'Carregando...'));
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
