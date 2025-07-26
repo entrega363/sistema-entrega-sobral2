@@ -1,0 +1,2367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - PWA v4</title>
+    <meta name="description" content="Sistema completo de delivery para Sobral-CE com PWA, pagamentos online e funcionalidades premium">
+    <meta name="theme-color" content="#2563eb">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNpc3RlbWEgRW50cmVnYSBTb2JyYWwiLAogICJzaG9ydF9uYW1lIjogIkVudHJlZ2EgU29icmFsIiwKICAiZGVzY3JpcHRpb24iOiAiU2lzdGVtYSBjb21wbGV0byBkZSBkZWxpdmVyeSBwYXJhIFNvYnJhbC1DRSIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzJkM2E4ZiIsCiAgInRoZW1lX2NvbG9yIjogIiMyNTYzZWIiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSGRwWkhSb1BTSXlOREFpSUdobGFXZG9kRDBpTWpRd0lqNDhjbVZqZENCM2FXUjBhRDBpTWpRd0lpQm9aV2xuYUhROUlqSTBNQ0lnWm1sc2JEMGlJekl6TmpObFlpSXZQand2YzNabklnPT0iLAogICAgICAic2l6ZXMiOiAiMjQweDI0MCIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMjQwIj48cmVjdCB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Stripe for payments -->
+    <script src="https://js.stripe.com/v3/"></script>
+    
+    <!-- QR Code generator -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <style>
+        /* PWA specific styles */
+        @media (display-mode: standalone) {
+            body {
+                -webkit-user-select: none;
+                -webkit-touch-callout: none;
+            }
+        }
+        
+        /* Custom animations */
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        
+        /* Payment form styles */
+        .payment-form {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* Notification styles */
+        .notification-success {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+        }
+        
+        .notification-error {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    const CACHE_NAME = 'entrega-sobral-v4';
+                    const urlsToCache = [
+                        './',
+                        'https://cdn.tailwindcss.com',
+                        'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+                        'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+                        'https://cdn.jsdelivr.net/npm/chart.js'
+                    ];
+
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME)
+                                .then(cache => cache.addAll(urlsToCache))
+                        );
+                    });
+
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request)
+                                .then(response => {
+                                    if (response) {
+                                        return response;
+                                    }
+                                    return fetch(event.request);
+                                })
+                        );
+                    });
+
+                    self.addEventListener('push', event => {
+                        const options = {
+                            body: event.data ? event.data.text() : 'Nova notificação do Sistema Entrega Sobral',
+                            icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMjQwIj48cmVjdCB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==',
+                            badge: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMjQwIj48cmVjdCB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==',
+                            vibrate: [200, 100, 200],
+                            tag: 'entrega-sobral'
+                        };
+
+                        event.waitUntil(
+                            self.registration.showNotification('Sistema Entrega Sobral', options)
+                        );
+                    });
+                `;
+
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+
+                navigator.serviceWorker.register(swUrl)
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+
+    <script type="module">
+        import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Hook para localStorage
+        function useStoredState(key, initialValue) {
+            const [state, setState] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                try {
+                    setState(value);
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                    // Disparar evento customizado para sincronização
+                    window.dispatchEvent(new CustomEvent('storageUpdate', { 
+                        detail: { key, value } 
+                    }));
+                } catch (error) {
+                    console.error('Erro ao salvar no localStorage:', error);
+                }
+            };
+
+            return [state, setValue];
+        }
+
+        // Hook para notificações push
+        function usePushNotifications() {
+            const [permission, setPermission] = useState(Notification.permission);
+            const [subscription, setSubscription] = useState(null);
+
+            useEffect(() => {
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.pushManager.getSubscription().then(sub => {
+                            setSubscription(sub);
+                        });
+                    });
+                }
+            }, []);
+
+            const requestPermission = async () => {
+                const result = await Notification.requestPermission();
+                setPermission(result);
+                return result;
+            };
+
+            const subscribeToPush = async () => {
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                    const registration = await navigator.serviceWorker.ready;
+                    const sub = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: 'BEl62iUYgUivxIkv69yViEuiBIa40HI0DLLuxazjqAKHSr3txbueJHoMwHB8XAwV9r3QzjWd6VBXaRVz0wdTrPo'
+                    });
+                    setSubscription(sub);
+                    return sub;
+                }
+            };
+
+            const sendPushNotification = (title, body) => {
+                if (subscription) {
+                    // Simular envio de push notification
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.showNotification(title, {
+                            body,
+                            icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMjQwIj48cmVjdCB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==',
+                            badge: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMjQwIj48cmVjdCB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==',
+                            vibrate: [200, 100, 200],
+                            tag: 'entrega-sobral'
+                        });
+                    });
+                }
+            };
+
+            return { permission, subscription, requestPermission, subscribeToPush, sendPushNotification };
+        }
+
+        // Hook para notificações
+        function useNotifications() {
+            const [notifications, setNotifications] = useStoredState('delivery_notifications', []);
+            const { sendPushNotification } = usePushNotifications();
+
+            const addNotification = (notification) => {
+                const newNotification = {
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                    read: false,
+                    ...notification
+                };
+                setNotifications(prev => [newNotification, ...prev]);
+                
+                // Enviar push notification
+                sendPushNotification(notification.title, notification.message);
+            };
+
+            const markAsRead = (notificationId) => {
+                setNotifications(prev => 
+                    prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+                );
+            };
+
+            const clearAll = () => {
+                setNotifications([]);
+            };
+
+            return { notifications, addNotification, markAsRead, clearAll };
+        }
+
+        // Hook para sistema de pagamentos
+        function usePayments() {
+            const [stripe, setStripe] = useState(null);
+            const [paymentMethods, setPaymentMethods] = useStoredState('payment_methods', []);
+
+            useEffect(() => {
+                // Inicializar Stripe (usando chave pública de teste)
+                if (window.Stripe) {
+                    setStripe(window.Stripe('pk_test_51234567890abcdef'));
+                }
+            }, []);
+
+            const processPayment = async (amount, paymentMethod, description) => {
+                // Simular processamento de pagamento
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        const success = Math.random() > 0.1; // 90% de sucesso
+                        resolve({
+                            success,
+                            transactionId: 'txn_' + Date.now(),
+                            amount,
+                            paymentMethod,
+                            description,
+                            timestamp: new Date().toISOString()
+                        });
+                    }, 2000);
+                });
+            };
+
+            const generatePixQR = async (amount, description) => {
+                const pixData = {
+                    amount,
+                    description,
+                    key: 'entregasobral@pix.com',
+                    timestamp: new Date().toISOString()
+                };
+
+                const pixString = `00020126580014BR.GOV.BCB.PIX0136${pixData.key}0208${description}5204000053039865802BR5925Sistema Entrega Sobral6007Sobral62070503***6304`;
+                
+                try {
+                    const qrCodeDataURL = await QRCode.toDataURL(pixString);
+                    return {
+                        qrCode: qrCodeDataURL,
+                        pixString,
+                        ...pixData
+                    };
+                } catch (error) {
+                    console.error('Erro ao gerar QR Code PIX:', error);
+                    return null;
+                }
+            };
+
+            return { stripe, paymentMethods, processPayment, generatePixQR };
+        }
+
+        // Hook para cupons e promoções
+        function useCoupons() {
+            const [coupons, setCoupons] = useStoredState('delivery_coupons', [
+                {
+                    id: 'BEMVINDO10',
+                    name: 'Bem-vindo',
+                    description: '10% de desconto na primeira compra',
+                    type: 'percentage',
+                    value: 10,
+                    minValue: 20,
+                    maxDiscount: 15,
+                    validUntil: '2024-12-31',
+                    usageLimit: 1,
+                    active: true
+                },
+                {
+                    id: 'FRETE5',
+                    name: 'Frete Grátis',
+                    description: 'R$ 5 de desconto no frete',
+                    type: 'fixed',
+                    value: 5,
+                    minValue: 30,
+                    maxDiscount: 5,
+                    validUntil: '2024-12-31',
+                    usageLimit: 3,
+                    active: true
+                }
+            ]);
+
+            const [usedCoupons, setUsedCoupons] = useStoredState('used_coupons', []);
+
+            const validateCoupon = (couponCode, orderValue, userId) => {
+                const coupon = coupons.find(c => c.id === couponCode && c.active);
+                if (!coupon) return { valid: false, error: 'Cupom não encontrado' };
+
+                if (orderValue < coupon.minValue) {
+                    return { valid: false, error: `Valor mínimo de R$ ${coupon.minValue.toFixed(2)}` };
+                }
+
+                const userUsage = usedCoupons.filter(uc => uc.couponId === couponCode && uc.userId === userId).length;
+                if (userUsage >= coupon.usageLimit) {
+                    return { valid: false, error: 'Cupom já utilizado' };
+                }
+
+                if (new Date() > new Date(coupon.validUntil)) {
+                    return { valid: false, error: 'Cupom expirado' };
+                }
+
+                let discount = 0;
+                if (coupon.type === 'percentage') {
+                    discount = Math.min((orderValue * coupon.value) / 100, coupon.maxDiscount);
+                } else {
+                    discount = coupon.value;
+                }
+
+                return { valid: true, discount, coupon };
+            };
+
+            const applyCoupon = (couponCode, userId) => {
+                setUsedCoupons(prev => [...prev, {
+                    id: Date.now(),
+                    couponId: couponCode,
+                    userId,
+                    usedAt: new Date().toISOString()
+                }]);
+            };
+
+            return { coupons, validateCoupon, applyCoupon };
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = useState('home');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [installPrompt, setInstallPrompt] = useState(null);
+            
+            const { notifications, addNotification, markAsRead, clearAll } = useNotifications();
+            const { requestPermission, subscribeToPush } = usePushNotifications();
+            const { processPayment, generatePixQR } = usePayments();
+            const { validateCoupon, applyCoupon } = useCoupons();
+
+            // Detectar status online/offline
+            useEffect(() => {
+                const handleOnline = () => setIsOnline(true);
+                const handleOffline = () => setIsOnline(false);
+
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                };
+            }, []);
+
+            // Detectar prompt de instalação PWA
+            useEffect(() => {
+                const handleBeforeInstallPrompt = (e) => {
+                    e.preventDefault();
+                    setInstallPrompt(e);
+                };
+
+                window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+                return () => {
+                    window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+                };
+            }, []);
+
+            // Solicitar permissões ao carregar
+            useEffect(() => {
+                requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        subscribeToPush();
+                    }
+                });
+            }, []);
+
+            // Estados dos dados (versão v4 com mais dados)
+            const [users, setUsers] = useStoredState('delivery_users', [
+                {
+                    id: 'user1',
+                    nome: 'João Entregador',
+                    email: 'joao@teste.com',
+                    senha: '123456',
+                    tipo: 'entregador',
+                    status: 'ativo',
+                    telefone: '(88) 99999-1234',
+                    cpf: '123.456.789-00',
+                    veiculo: 'Moto Honda CG 160',
+                    placa: 'ABC-1234',
+                    disponivel: true,
+                    totalEntregas: 15,
+                    endereco: 'Rua das Palmeiras, 100',
+                    bairro: 'Centro',
+                    cnh: '12345678901',
+                    avaliacaoMedia: 4.8,
+                    localizacao: { lat: -3.6914, lng: -40.3492 },
+                    configuracoes: {
+                        notificacoesPush: true,
+                        notificacoesEmail: true,
+                        raioEntrega: 5,
+                        horarioTrabalho: { inicio: '18:00', fim: '23:00' }
+                    },
+                    carteira: {
+                        saldo: 150.75,
+                        contaBanco: '12345-6',
+                        agencia: '1234',
+                        banco: 'Banco do Brasil',
+                        pix: 'joao@teste.com'
+                    },
+                    cadastradoEm: '2024-01-15 10:30:00'
+                }
+            ]);
+
+            const [empresas, setEmpresas] = useStoredState('delivery_empresas', [
+                {
+                    id: 'emp1',
+                    nome: 'Pizza do Zé',
+                    email: 'pizza@teste.com',
+                    senha: '123456',
+                    tipo: 'empresa',
+                    status: 'ativo',
+                    cnpj: '12.345.678/0001-90',
+                    telefone: '(88) 3611-1234',
+                    categoria: 'Pizzaria',
+                    endereco: 'Rua Coronel Mont\'Alverne, 500 - Centro',
+                    responsavel: 'José Silva',
+                    bairro: 'Centro',
+                    taxaEntrega: '5.00',
+                    tempoEntrega: '30-45 min',
+                    avaliacaoMedia: 4.5,
+                    totalPedidos: 150,
+                    localizacao: { lat: -3.6889, lng: -40.3467 },
+                    produtos: [
+                        { 
+                            id: 1, 
+                            nome: 'Pizza Margherita', 
+                            preco: 25.90, 
+                            descricao: 'Molho de tomate, mussarela, manjericão', 
+                            categoria: 'Pizza', 
+                            disponivel: true, 
+                            tempoPrep: 25, 
+                            imagem: '🍕',
+                            promocao: { ativo: false, precoPromocional: 0 }
+                        },
+                        { 
+                            id: 2, 
+                            nome: 'Pizza Calabresa', 
+                            preco: 28.90, 
+                            descricao: 'Molho de tomate, mussarela, calabresa, cebola', 
+                            categoria: 'Pizza', 
+                            disponivel: true, 
+                            tempoPrep: 25, 
+                            imagem: '🍕',
+                            promocao: { ativo: true, precoPromocional: 24.90 }
+                        }
+                    ],
+                    configuracoes: {
+                        aceitaPedidosOnline: true,
+                        tempoMinimoEntrega: 30,
+                        valorMinimoEntrega: 20.00,
+                        formasPagamento: ['dinheiro', 'cartao', 'pix'],
+                        taxaComissao: 8.5
+                    },
+                    financeiro: {
+                        faturamentoMensal: 12500.80,
+                        comissoesPendentes: 1062.57,
+                        contaBanco: '98765-4',
+                        agencia: '9876',
+                        banco: 'Caixa Econômica',
+                        pix: 'pizza@teste.com'
+                    },
+                    cadastradaEm: '2024-01-10 09:00:00'
+                }
+            ]);
+
+            const [consumidores, setConsumidores] = useStoredState('delivery_consumidores', [
+                {
+                    id: 'cons1',
+                    nome: 'Maria Silva',
+                    email: 'maria@teste.com',
+                    senha: '123456',
+                    telefone: '(88) 99999-5678',
+                    cpf: '987.654.321-00',
+                    endereco: 'Rua das Flores, 123',
+                    bairro: 'Centro',
+                    pontoReferencia: 'Próximo ao mercado',
+                    totalPedidos: 8,
+                    localizacao: { lat: -3.6904, lng: -40.3456 },
+                    enderecosFavoritos: [
+                        { 
+                            id: 1, 
+                            nome: 'Casa', 
+                            endereco: 'Rua das Flores, 123 - Centro', 
+                            referencia: 'Próximo ao mercado', 
+                            localizacao: { lat: -3.6904, lng: -40.3456 } 
+                        }
+                    ],
+                    carteira: {
+                        creditos: 25.50,
+                        cartoesSalvos: [
+                            {
+                                id: 'card1',
+                                tipo: 'visa',
+                                final: '1234',
+                                nome: 'MARIA SILVA',
+                                principal: true
+                            }
+                        ]
+                    },
+                    configuracoes: {
+                        notificacoesPedido: true,
+                        notificacoesPromocao: true,
+                        formasPagamentoPreferidas: ['pix', 'cartao']
+                    },
+                    cadastradoEm: '2024-01-12 11:20:00'
+                }
+            ]);
+
+            const [pedidos, setPedidos] = useStoredState('delivery_pedidos', [
+                {
+                    id: '1',
+                    cliente: 'Maria Silva',
+                    clienteId: 'cons1',
+                    endereco: 'Rua das Flores, 123 - Centro',
+                    localizacaoEntrega: { lat: -3.6904, lng: -40.3456 },
+                    telefone: '(88) 99999-5678',
+                    valor: 45.90,
+                    status: 'disponivel',
+                    items: [
+                        { nome: 'Pizza Margherita', quantidade: 1, preco: 25.90 },
+                        { nome: 'Coca-Cola 2L', quantidade: 1, preco: 8.90 }
+                    ],
+                    empresaId: 'emp1',
+                    empresaNome: 'Pizza do Zé',
+                    empresaLocalizacao: { lat: -3.6889, lng: -40.3467 },
+                    entregadorId: null,
+                    entregadorNome: null,
+                    criadoEm: '2024-01-25 19:30:00',
+                    tempoEstimado: '30-45 min',
+                    observacoes: 'Sem cebola na pizza',
+                    formaPagamento: 'pix',
+                    statusPagamento: 'pendente',
+                    troco: 0,
+                    taxaEntrega: 5.00,
+                    subtotal: 34.80,
+                    desconto: 0,
+                    cupomAplicado: null,
+                    distanciaKm: 1.2,
+                    tempoEstimadoEntrega: 35,
+                    prioridade: 'normal',
+                    pagamento: {
+                        metodo: 'pix',
+                        status: 'pendente',
+                        transactionId: null,
+                        processadoEm: null
+                    },
+                    historico: [
+                        { 
+                            status: 'disponivel', 
+                            timestamp: '2024-01-25 19:30:00', 
+                            descricao: 'Pedido realizado', 
+                            usuario: 'Maria Silva' 
+                        }
+                    ],
+                    chatId: 'chat_1_emp1_cons1'
+                }
+            ]);
+
+            const admins = [
+                {
+                    id: 'admin1',
+                    nome: 'Administrador',
+                    email: 'admin',
+                    senha: 'tenderbr0',
+                    tipo: 'admin'
+                }
+            ]; 
+           // Componente PWA Install Banner
+            const PWAInstallBanner = () => {
+                const [showBanner, setShowBanner] = useState(!!installPrompt);
+
+                const handleInstall = async () => {
+                    if (installPrompt) {
+                        installPrompt.prompt();
+                        const { outcome } = await installPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            addNotification({
+                                title: 'App instalado!',
+                                message: 'Sistema Entrega Sobral foi instalado com sucesso',
+                                icon: '📱',
+                                type: 'success'
+                            });
+                        }
+                        setInstallPrompt(null);
+                        setShowBanner(false);
+                    }
+                };
+
+                if (!showBanner) return null;
+
+                return React.createElement('div', {
+                    className: 'fixed bottom-4 left-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 slide-in'
+                }, [
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'flex items-center justify-between'
+                    }, [
+                        React.createElement('div', {
+                            key: 'text',
+                            className: 'flex-1'
+                        }, [
+                            React.createElement('h4', {
+                                key: 'title',
+                                className: 'font-bold'
+                            }, '📱 Instalar App'),
+                            React.createElement('p', {
+                                key: 'description',
+                                className: 'text-sm opacity-90'
+                            }, 'Instale o app para uma experiência melhor')
+                        ]),
+                        React.createElement('div', {
+                            key: 'actions',
+                            className: 'flex space-x-2'
+                        }, [
+                            React.createElement('button', {
+                                key: 'dismiss',
+                                onClick: () => setShowBanner(false),
+                                className: 'px-3 py-1 text-sm bg-blue-700 rounded hover:bg-blue-800'
+                            }, 'Depois'),
+                            React.createElement('button', {
+                                key: 'install',
+                                onClick: handleInstall,
+                                className: 'px-3 py-1 text-sm bg-white text-blue-600 rounded hover:bg-gray-100'
+                            }, 'Instalar')
+                        ])
+                    ])
+                ]);
+            };
+
+            // Componente de Status de Conexão
+            const ConnectionStatus = () => {
+                if (isOnline) return null;
+
+                return React.createElement('div', {
+                    className: 'fixed top-0 left-0 right-0 bg-red-600 text-white p-2 text-center z-50'
+                }, [
+                    React.createElement('span', {
+                        key: 'icon',
+                        className: 'mr-2'
+                    }, '📶'),
+                    React.createElement('span', {
+                        key: 'text'
+                    }, 'Sem conexão - Modo offline ativo')
+                ]);
+            };
+
+            // Componente de Sistema de Pagamentos
+            const PaymentSystem = ({ pedido, onPaymentComplete, onCancel }) => {
+                const [selectedMethod, setSelectedMethod] = useState('pix');
+                const [loading, setLoading] = useState(false);
+                const [pixData, setPixData] = useState(null);
+                const [cardData, setCardData] = useState({
+                    number: '',
+                    expiry: '',
+                    cvc: '',
+                    name: ''
+                });
+                const [couponCode, setCouponCode] = useState('');
+                const [appliedCoupon, setAppliedCoupon] = useState(null);
+                const [discount, setDiscount] = useState(0);
+
+                const totalValue = pedido.valor - discount;
+
+                const handleCouponApply = () => {
+                    const result = validateCoupon(couponCode, pedido.valor, pedido.clienteId);
+                    if (result.valid) {
+                        setAppliedCoupon(result.coupon);
+                        setDiscount(result.discount);
+                        addNotification({
+                            title: 'Cupom aplicado!',
+                            message: `Desconto de R$ ${result.discount.toFixed(2)}`,
+                            icon: '🎟️',
+                            type: 'success'
+                        });
+                    } else {
+                        addNotification({
+                            title: 'Cupom inválido',
+                            message: result.error,
+                            icon: '❌',
+                            type: 'error'
+                        });
+                    }
+                };
+
+                const handlePayment = async () => {
+                    setLoading(true);
+
+                    try {
+                        let paymentResult;
+
+                        if (selectedMethod === 'pix') {
+                            if (!pixData) {
+                                const pix = await generatePixQR(totalValue, `Pedido #${pedido.id}`);
+                                setPixData(pix);
+                                setLoading(false);
+                                return;
+                            }
+                            // Simular confirmação PIX
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                            paymentResult = {
+                                success: true,
+                                transactionId: 'pix_' + Date.now(),
+                                method: 'pix'
+                            };
+                        } else if (selectedMethod === 'cartao') {
+                            paymentResult = await processPayment(totalValue, 'cartao', `Pedido #${pedido.id}`);
+                        } else if (selectedMethod === 'dinheiro') {
+                            paymentResult = {
+                                success: true,
+                                transactionId: 'cash_' + Date.now(),
+                                method: 'dinheiro'
+                            };
+                        }
+
+                        if (paymentResult.success) {
+                            if (appliedCoupon) {
+                                applyCoupon(appliedCoupon.id, pedido.clienteId);
+                            }
+
+                            addNotification({
+                                title: 'Pagamento aprovado!',
+                                message: `Pedido #${pedido.id} pago com sucesso`,
+                                icon: '✅',
+                                type: 'success'
+                            });
+
+                            onPaymentComplete({
+                                ...paymentResult,
+                                discount,
+                                coupon: appliedCoupon,
+                                finalValue: totalValue
+                            });
+                        } else {
+                            addNotification({
+                                title: 'Pagamento recusado',
+                                message: 'Tente novamente ou use outro método',
+                                icon: '❌',
+                                type: 'error'
+                            });
+                        }
+                    } catch (error) {
+                        addNotification({
+                            title: 'Erro no pagamento',
+                            message: 'Ocorreu um erro. Tente novamente.',
+                            icon: '❌',
+                            type: 'error'
+                        });
+                    }
+
+                    setLoading(false);
+                };
+
+                const renderPixPayment = () => {
+                    if (!pixData) {
+                        return React.createElement('div', {
+                            className: 'text-center'
+                        }, [
+                            React.createElement('p', {
+                                key: 'text',
+                                className: 'text-gray-600 mb-4'
+                            }, 'Clique em "Gerar PIX" para continuar'),
+                            React.createElement('button', {
+                                key: 'generate',
+                                onClick: handlePayment,
+                                disabled: loading,
+                                className: 'bg-purple-600 text-white px-6 py-3 rounded-md hover:bg-purple-700 disabled:opacity-50'
+                            }, loading ? 'Gerando...' : 'Gerar PIX')
+                        ]);
+                    }
+
+                    return React.createElement('div', {
+                        className: 'text-center'
+                    }, [
+                        React.createElement('div', {
+                            key: 'qr-code',
+                            className: 'mb-4'
+                        }, [
+                            React.createElement('img', {
+                                key: 'qr',
+                                src: pixData.qrCode,
+                                alt: 'QR Code PIX',
+                                className: 'mx-auto w-48 h-48 border rounded-lg'
+                            })
+                        ]),
+                        React.createElement('p', {
+                            key: 'instructions',
+                            className: 'text-sm text-gray-600 mb-4'
+                        }, 'Escaneie o QR Code com seu app bancário'),
+                        React.createElement('div', {
+                            key: 'copy-paste',
+                            className: 'bg-gray-100 p-3 rounded-lg mb-4'
+                        }, [
+                            React.createElement('p', {
+                                key: 'label',
+                                className: 'text-xs text-gray-500 mb-1'
+                            }, 'Ou copie o código PIX:'),
+                            React.createElement('p', {
+                                key: 'code',
+                                className: 'text-xs font-mono break-all'
+                            }, pixData.pixString.substring(0, 50) + '...')
+                        ]),
+                        React.createElement('button', {
+                            key: 'confirm',
+                            onClick: handlePayment,
+                            disabled: loading,
+                            className: 'bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 disabled:opacity-50'
+                        }, loading ? 'Confirmando...' : 'Confirmar Pagamento')
+                    ]);
+                };
+
+                const renderCardPayment = () => {
+                    return React.createElement('div', {
+                        className: 'space-y-4'
+                    }, [
+                        React.createElement('div', { key: 'card-number' }, [
+                            React.createElement('label', {
+                                key: 'label',
+                                className: 'block text-sm font-medium text-gray-700 mb-1'
+                            }, 'Número do Cartão'),
+                            React.createElement('input', {
+                                key: 'input',
+                                type: 'text',
+                                value: cardData.number,
+                                onChange: (e) => setCardData({ ...cardData, number: e.target.value }),
+                                placeholder: '1234 5678 9012 3456',
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            })
+                        ]),
+                        React.createElement('div', {
+                            key: 'card-details',
+                            className: 'grid grid-cols-2 gap-4'
+                        }, [
+                            React.createElement('div', { key: 'expiry' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-1'
+                                }, 'Validade'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'text',
+                                    value: cardData.expiry,
+                                    onChange: (e) => setCardData({ ...cardData, expiry: e.target.value }),
+                                    placeholder: 'MM/AA',
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                })
+                            ]),
+                            React.createElement('div', { key: 'cvc' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-1'
+                                }, 'CVC'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'text',
+                                    value: cardData.cvc,
+                                    onChange: (e) => setCardData({ ...cardData, cvc: e.target.value }),
+                                    placeholder: '123',
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                })
+                            ])
+                        ]),
+                        React.createElement('div', { key: 'card-name' }, [
+                            React.createElement('label', {
+                                key: 'label',
+                                className: 'block text-sm font-medium text-gray-700 mb-1'
+                            }, 'Nome no Cartão'),
+                            React.createElement('input', {
+                                key: 'input',
+                                type: 'text',
+                                value: cardData.name,
+                                onChange: (e) => setCardData({ ...cardData, name: e.target.value }),
+                                placeholder: 'NOME COMPLETO',
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            })
+                        ]),
+                        React.createElement('button', {
+                            key: 'pay',
+                            onClick: handlePayment,
+                            disabled: loading || !cardData.number || !cardData.expiry || !cardData.cvc || !cardData.name,
+                            className: 'w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                        }, loading ? 'Processando...' : `Pagar R$ ${totalValue.toFixed(2)}`)
+                    ]);
+                };
+
+                return React.createElement('div', {
+                    className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
+                }, [
+                    React.createElement('div', {
+                        key: 'payment-modal',
+                        className: 'bg-white rounded-lg shadow-xl w-full max-w-md max-h-screen overflow-y-auto'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'payment-form text-white p-6 rounded-t-lg'
+                        }, [
+                            React.createElement('div', {
+                                key: 'header-content',
+                                className: 'flex justify-between items-center'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'text-xl font-bold'
+                                }, '💳 Pagamento'),
+                                React.createElement('button', {
+                                    key: 'close',
+                                    onClick: onCancel,
+                                    className: 'text-white hover:text-gray-200'
+                                }, '✕')
+                            ]),
+                            React.createElement('p', {
+                                key: 'pedido',
+                                className: 'text-sm opacity-90 mt-2'
+                            }, `Pedido #${pedido.id} - ${pedido.empresaNome}`)
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'content',
+                            className: 'p-6'
+                        }, [
+                            // Resumo do pedido
+                            React.createElement('div', {
+                                key: 'order-summary',
+                                className: 'bg-gray-50 p-4 rounded-lg mb-6'
+                            }, [
+                                React.createElement('h4', {
+                                    key: 'title',
+                                    className: 'font-semibold mb-2'
+                                }, 'Resumo do Pedido'),
+                                React.createElement('div', {
+                                    key: 'items',
+                                    className: 'space-y-1 text-sm'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'subtotal',
+                                        className: 'flex justify-between'
+                                    }, [
+                                        React.createElement('span', { key: 'label' }, 'Subtotal:'),
+                                        React.createElement('span', { key: 'value' }, `R$ ${pedido.subtotal.toFixed(2)}`)
+                                    ]),
+                                    React.createElement('div', {
+                                        key: 'taxa',
+                                        className: 'flex justify-between'
+                                    }, [
+                                        React.createElement('span', { key: 'label' }, 'Taxa de entrega:'),
+                                        React.createElement('span', { key: 'value' }, `R$ ${pedido.taxaEntrega.toFixed(2)}`)
+                                    ]),
+                                    discount > 0 && React.createElement('div', {
+                                        key: 'discount',
+                                        className: 'flex justify-between text-green-600'
+                                    }, [
+                                        React.createElement('span', { key: 'label' }, 'Desconto:'),
+                                        React.createElement('span', { key: 'value' }, `- R$ ${discount.toFixed(2)}`)
+                                    ]),
+                                    React.createElement('div', {
+                                        key: 'total',
+                                        className: 'flex justify-between font-bold text-lg border-t pt-2'
+                                    }, [
+                                        React.createElement('span', { key: 'label' }, 'Total:'),
+                                        React.createElement('span', { key: 'value' }, `R$ ${totalValue.toFixed(2)}`)
+                                    ])
+                                ])
+                            ]),
+
+                            // Sistema de cupons
+                            !appliedCoupon && React.createElement('div', {
+                                key: 'coupon-section',
+                                className: 'mb-6'
+                            }, [
+                                React.createElement('h4', {
+                                    key: 'title',
+                                    className: 'font-semibold mb-2'
+                                }, '🎟️ Cupom de Desconto'),
+                                React.createElement('div', {
+                                    key: 'coupon-input',
+                                    className: 'flex space-x-2'
+                                }, [
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        value: couponCode,
+                                        onChange: (e) => setCouponCode(e.target.value.toUpperCase()),
+                                        placeholder: 'Digite o cupom',
+                                        className: 'flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    }),
+                                    React.createElement('button', {
+                                        key: 'apply',
+                                        onClick: handleCouponApply,
+                                        disabled: !couponCode,
+                                        className: 'px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50'
+                                    }, 'Aplicar')
+                                ])
+                            ]),
+
+                            appliedCoupon && React.createElement('div', {
+                                key: 'applied-coupon',
+                                className: 'mb-6 p-3 bg-green-50 border border-green-200 rounded-lg'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'coupon-info',
+                                    className: 'flex justify-between items-center'
+                                }, [
+                                    React.createElement('div', { key: 'details' }, [
+                                        React.createElement('p', {
+                                            key: 'name',
+                                            className: 'font-semibold text-green-800'
+                                        }, `🎟️ ${appliedCoupon.name}`),
+                                        React.createElement('p', {
+                                            key: 'description',
+                                            className: 'text-sm text-green-600'
+                                        }, appliedCoupon.description)
+                                    ]),
+                                    React.createElement('button', {
+                                        key: 'remove',
+                                        onClick: () => {
+                                            setAppliedCoupon(null);
+                                            setDiscount(0);
+                                            setCouponCode('');
+                                        },
+                                        className: 'text-red-600 hover:text-red-800'
+                                    }, '❌')
+                                ])
+                            ]),
+
+                            // Métodos de pagamento
+                            React.createElement('div', {
+                                key: 'payment-methods',
+                                className: 'mb-6'
+                            }, [
+                                React.createElement('h4', {
+                                    key: 'title',
+                                    className: 'font-semibold mb-3'
+                                }, 'Método de Pagamento'),
+                                React.createElement('div', {
+                                    key: 'methods',
+                                    className: 'space-y-2'
+                                }, [
+                                    React.createElement('label', {
+                                        key: 'pix',
+                                        className: 'flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50'
+                                    }, [
+                                        React.createElement('input', {
+                                            key: 'radio',
+                                            type: 'radio',
+                                            name: 'payment',
+                                            value: 'pix',
+                                            checked: selectedMethod === 'pix',
+                                            onChange: (e) => setSelectedMethod(e.target.value),
+                                            className: 'mr-3'
+                                        }),
+                                        React.createElement('span', {
+                                            key: 'icon',
+                                            className: 'text-2xl mr-3'
+                                        }, '📱'),
+                                        React.createElement('div', { key: 'info' }, [
+                                            React.createElement('p', {
+                                                key: 'name',
+                                                className: 'font-medium'
+                                            }, 'PIX'),
+                                            React.createElement('p', {
+                                                key: 'description',
+                                                className: 'text-sm text-gray-600'
+                                            }, 'Pagamento instantâneo')
+                                        ])
+                                    ]),
+                                    React.createElement('label', {
+                                        key: 'cartao',
+                                        className: 'flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50'
+                                    }, [
+                                        React.createElement('input', {
+                                            key: 'radio',
+                                            type: 'radio',
+                                            name: 'payment',
+                                            value: 'cartao',
+                                            checked: selectedMethod === 'cartao',
+                                            onChange: (e) => setSelectedMethod(e.target.value),
+                                            className: 'mr-3'
+                                        }),
+                                        React.createElement('span', {
+                                            key: 'icon',
+                                            className: 'text-2xl mr-3'
+                                        }, '💳'),
+                                        React.createElement('div', { key: 'info' }, [
+                                            React.createElement('p', {
+                                                key: 'name',
+                                                className: 'font-medium'
+                                            }, 'Cartão de Crédito'),
+                                            React.createElement('p', {
+                                                key: 'description',
+                                                className: 'text-sm text-gray-600'
+                                            }, 'Visa, Mastercard, Elo')
+                                        ])
+                                    ]),
+                                    React.createElement('label', {
+                                        key: 'dinheiro',
+                                        className: 'flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50'
+                                    }, [
+                                        React.createElement('input', {
+                                            key: 'radio',
+                                            type: 'radio',
+                                            name: 'payment',
+                                            value: 'dinheiro',
+                                            checked: selectedMethod === 'dinheiro',
+                                            onChange: (e) => setSelectedMethod(e.target.value),
+                                            className: 'mr-3'
+                                        }),
+                                        React.createElement('span', {
+                                            key: 'icon',
+                                            className: 'text-2xl mr-3'
+                                        }, '💵'),
+                                        React.createElement('div', { key: 'info' }, [
+                                            React.createElement('p', {
+                                                key: 'name',
+                                                className: 'font-medium'
+                                            }, 'Dinheiro'),
+                                            React.createElement('p', {
+                                                key: 'description',
+                                                className: 'text-sm text-gray-600'
+                                            }, 'Pagamento na entrega')
+                                        ])
+                                    ])
+                                ])
+                            ]),
+
+                            // Formulário específico do método
+                            React.createElement('div', {
+                                key: 'payment-form',
+                                className: 'mb-6'
+                            }, [
+                                selectedMethod === 'pix' && renderPixPayment(),
+                                selectedMethod === 'cartao' && renderCardPayment(),
+                                selectedMethod === 'dinheiro' && React.createElement('div', {
+                                    className: 'text-center p-4 bg-yellow-50 rounded-lg'
+                                }, [
+                                    React.createElement('p', {
+                                        key: 'text',
+                                        className: 'text-yellow-800'
+                                    }, '💵 Pagamento será realizado na entrega'),
+                                    React.createElement('button', {
+                                        key: 'confirm',
+                                        onClick: handlePayment,
+                                        disabled: loading,
+                                        className: 'mt-3 bg-yellow-600 text-white px-6 py-2 rounded-md hover:bg-yellow-700 disabled:opacity-50'
+                                    }, loading ? 'Confirmando...' : 'Confirmar Pedido')
+                                ])
+                            ])
+                        ])
+                    ])
+                ]);
+            }; 
+           // Componente de Notificações
+            const NotificationCenter = () => {
+                const [showNotifications, setShowNotifications] = useState(false);
+                const unreadCount = notifications.filter(n => !n.read).length;
+
+                return React.createElement('div', {
+                    className: 'relative'
+                }, [
+                    React.createElement('button', {
+                        key: 'bell',
+                        onClick: () => setShowNotifications(!showNotifications),
+                        className: 'relative p-2 text-gray-600 hover:text-gray-800 transition duration-200'
+                    }, [
+                        React.createElement('span', {
+                            key: 'icon',
+                            className: 'text-2xl'
+                        }, '🔔'),
+                        unreadCount > 0 && React.createElement('span', {
+                            key: 'badge',
+                            className: 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center'
+                        }, unreadCount > 9 ? '9+' : unreadCount)
+                    ]),
+
+                    showNotifications && React.createElement('div', {
+                        key: 'dropdown',
+                        className: 'absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-50 max-h-96 overflow-y-auto'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'p-4 border-b flex justify-between items-center'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'font-bold text-gray-800'
+                            }, 'Notificações'),
+                            notifications.length > 0 && React.createElement('button', {
+                                key: 'clear',
+                                onClick: clearAll,
+                                className: 'text-sm text-blue-600 hover:text-blue-800'
+                            }, 'Limpar todas')
+                        ]),
+
+                        notifications.length > 0 ? React.createElement('div', {
+                            key: 'list',
+                            className: 'divide-y'
+                        }, notifications.slice(0, 10).map(notification =>
+                            React.createElement('div', {
+                                key: notification.id,
+                                onClick: () => markAsRead(notification.id),
+                                className: `p-4 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`
+                            }, [
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'flex items-start space-x-3'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'icon',
+                                        className: 'text-2xl'
+                                    }, notification.icon || '📢'),
+                                    React.createElement('div', {
+                                        key: 'text',
+                                        className: 'flex-1'
+                                    }, [
+                                        React.createElement('h4', {
+                                            key: 'title',
+                                            className: `font-medium ${!notification.read ? 'text-blue-900' : 'text-gray-900'}`
+                                        }, notification.title),
+                                        React.createElement('p', {
+                                            key: 'message',
+                                            className: 'text-sm text-gray-600 mt-1'
+                                        }, notification.message),
+                                        React.createElement('p', {
+                                            key: 'time',
+                                            className: 'text-xs text-gray-400 mt-1'
+                                        }, new Date(notification.timestamp).toLocaleString('pt-BR'))
+                                    ])
+                                ])
+                            ])
+                        )) : React.createElement('div', {
+                            key: 'empty',
+                            className: 'p-8 text-center text-gray-500'
+                        }, [
+                            React.createElement('span', {
+                                key: 'icon',
+                                className: 'text-4xl mb-2 block'
+                            }, '🔕'),
+                            React.createElement('p', {
+                                key: 'text'
+                            }, 'Nenhuma notificação')
+                        ])
+                    ])
+                ]);
+            };
+
+            // Tela inicial com recursos PWA
+            const HomeScreen = () => {
+                const [showFeatures, setShowFeatures] = useState(false);
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md fade-in'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-6xl mb-4'
+                            }, '🚚'),
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Sistema Entrega Sobral'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Plataforma completa de delivery'),
+                            React.createElement('div', {
+                                key: 'version',
+                                className: 'mt-2 text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full inline-block'
+                            }, 'v4.0 - PWA Premium'),
+                            React.createElement('div', {
+                                key: 'status',
+                                className: `mt-2 text-xs px-2 py-1 rounded-full inline-block ${
+                                    isOnline ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
+                                }`
+                            }, isOnline ? '🟢 Online' : '🔴 Offline')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'features-toggle',
+                            className: 'mb-6 text-center'
+                        }, [
+                            React.createElement('button', {
+                                key: 'toggle',
+                                onClick: () => setShowFeatures(!showFeatures),
+                                className: 'text-blue-600 hover:text-blue-800 text-sm'
+                            }, showFeatures ? '▼ Ocultar recursos' : '▶ Ver novos recursos v4.0')
+                        ]),
+
+                        showFeatures && React.createElement('div', {
+                            key: 'features',
+                            className: 'mb-6 slide-in'
+                        }, [
+                            React.createElement('div', {
+                                key: 'feature-list',
+                                className: 'grid grid-cols-1 gap-2 text-xs text-gray-600 bg-gray-50 p-4 rounded-lg'
+                            }, [
+                                React.createElement('div', { key: 'f1', className: 'flex items-center' }, [
+                                    React.createElement('span', { key: 'icon', className: 'mr-2' }, '📱'),
+                                    React.createElement('span', { key: 'text' }, 'PWA - Instale como app')
+                                ]),
+                                React.createElement('div', { key: 'f2', className: 'flex items-center' }, [
+                                    React.createElement('span', { key: 'icon', className: 'mr-2' }, '💳'),
+                                    React.createElement('span', { key: 'text' }, 'Pagamentos online (PIX, Cartão)')
+                                ]),
+                                React.createElement('div', { key: 'f3', className: 'flex items-center' }, [
+                                    React.createElement('span', { key: 'icon', className: 'mr-2' }, '🎟️'),
+                                    React.createElement('span', { key: 'text' }, 'Sistema de cupons')
+                                ]),
+                                React.createElement('div', { key: 'f4', className: 'flex items-center' }, [
+                                    React.createElement('span', { key: 'icon', className: 'mr-2' }, '🔔'),
+                                    React.createElement('span', { key: 'text' }, 'Notificações push reais')
+                                ]),
+                                React.createElement('div', { key: 'f5', className: 'flex items-center' }, [
+                                    React.createElement('span', { key: 'icon', className: 'mr-2' }, '📶'),
+                                    React.createElement('span', { key: 'text' }, 'Funciona offline')
+                                ]),
+                                React.createElement('div', { key: 'f6', className: 'flex items-center' }, [
+                                    React.createElement('span', { key: 'icon', className: 'mr-2' }, '💬'),
+                                    React.createElement('span', { key: 'text' }, 'Chat em tempo real')
+                                ])
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'options',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('button', {
+                                key: 'login',
+                                onClick: () => setCurrentView('login'),
+                                className: 'w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium'
+                            }, '🔑 Fazer Login'),
+
+                            React.createElement('div', {
+                                key: 'divider',
+                                className: 'text-center text-gray-500 text-sm'
+                            }, 'ou cadastre-se como:'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-empresa',
+                                onClick: () => setCurrentView('cadastro-empresa'),
+                                className: 'w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                            }, '🏢 Empresa/Restaurante'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-entregador',
+                                onClick: () => setCurrentView('cadastro-entregador'),
+                                className: 'w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 transition duration-200 font-medium'
+                            }, '🏍️ Entregador'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-consumidor',
+                                onClick: () => setCurrentView('cadastro-consumidor'),
+                                className: 'w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition duration-200 font-medium'
+                            }, '👤 Cliente/Consumidor')
+                        ])
+                    ])
+                );
+            };
+
+            // Formulário de Login
+            const LoginForm = () => {
+                const [formData, setFormData] = useState({
+                    email: '',
+                    senha: '',
+                    tipo: ''
+                });
+                const [error, setError] = useState('');
+                const [loading, setLoading] = useState(false);
+
+                const handleSubmit = async (e) => {
+                    e.preventDefault();
+                    setError('');
+                    setLoading(true);
+
+                    // Simular delay de autenticação
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    let user = null;
+
+                    // Verificar admin
+                    if (formData.tipo === 'admin') {
+                        const admin = admins.find(a => a.email === formData.email && a.senha === formData.senha);
+                        if (admin) {
+                            user = admin;
+                        }
+                    }
+                    // Verificar empresa
+                    else if (formData.tipo === 'empresa') {
+                        const empresa = empresas.find(e => e.email === formData.email && e.senha === formData.senha);
+                        if (empresa) {
+                            if (empresa.status !== 'ativo') {
+                                setError('Sua conta ainda não foi aprovada pelo administrador.');
+                                setLoading(false);
+                                return;
+                            }
+                            user = empresa;
+                        }
+                    }
+                    // Verificar entregador
+                    else if (formData.tipo === 'entregador') {
+                        const entregador = users.find(u => u.email === formData.email && u.senha === formData.senha && u.tipo === 'entregador');
+                        if (entregador) {
+                            if (entregador.status !== 'ativo') {
+                                setError('Sua conta ainda não foi aprovada pelo administrador.');
+                                setLoading(false);
+                                return;
+                            }
+                            user = entregador;
+                            // Atualizar última atividade
+                            setUsers(users.map(u => 
+                                u.id === entregador.id ? { ...u, ultimaAtividade: new Date().toISOString() } : u
+                            ));
+                        }
+                    }
+                    // Verificar consumidor
+                    else if (formData.tipo === 'consumidor') {
+                        const consumidor = consumidores.find(c => c.email === formData.email && c.senha === formData.senha);
+                        if (consumidor) {
+                            user = consumidor;
+                            user.tipo = 'consumidor';
+                        }
+                    }
+
+                    if (user) {
+                        setCurrentUser(user);
+                        setCurrentView('dashboard');
+                        
+                        // Notificação de login
+                        addNotification({
+                            title: 'Login realizado',
+                            message: `Bem-vindo(a), ${user.nome}! Sistema v4.0 PWA carregado.`,
+                            icon: '👋',
+                            type: 'success'
+                        });
+                    } else {
+                        setError('Email ou senha incorretos.');
+                    }
+                    
+                    setLoading(false);
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md fade-in'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, '🔑 Login'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Acesse sua conta - PWA v4.0')
+                        ]),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', { key: 'tipo' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Tipo de Usuário *'),
+                                React.createElement('select', {
+                                    key: 'select',
+                                    required: true,
+                                    value: formData.tipo,
+                                    onChange: (e) => setFormData({ ...formData, tipo: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    disabled: loading
+                                }, [
+                                    React.createElement('option', { key: 'default', value: '' }, 'Selecione o tipo'),
+                                    React.createElement('option', { key: 'admin', value: 'admin' }, '👨‍💼 Administrador'),
+                                    React.createElement('option', { key: 'empresa', value: 'empresa' }, '🏢 Empresa'),
+                                    React.createElement('option', { key: 'entregador', value: 'entregador' }, '🏍️ Entregador'),
+                                    React.createElement('option', { key: 'consumidor', value: 'consumidor' }, '👤 Cliente')
+                                ])
+                            ]),
+
+                            React.createElement('div', { key: 'email' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Email *'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'email',
+                                    required: true,
+                                    value: formData.email,
+                                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: 'seu@email.com',
+                                    disabled: loading
+                                })
+                            ]),
+
+                            React.createElement('div', { key: 'senha' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Senha *'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'password',
+                                    required: true,
+                                    value: formData.senha,
+                                    onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: 'Sua senha',
+                                    disabled: loading
+                                })
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center bg-red-50 p-3 rounded-md notification-error'
+                            }, error),
+
+                            React.createElement('div', {
+                                key: 'buttons',
+                                className: 'flex space-x-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    type: 'button',
+                                    onClick: () => {
+                                        setCurrentView('home');
+                                        setError('');
+                                    },
+                                    className: 'flex-1 bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium',
+                                    disabled: loading
+                                }, 'Voltar'),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: `flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium ${loading ? 'opacity-50 cursor-not-allowed' : ''}`,
+                                    disabled: loading
+                                }, [
+                                    loading && React.createElement('div', {
+                                        key: 'spinner',
+                                        className: 'spinner inline-block mr-2'
+                                    }),
+                                    loading ? 'Entrando...' : 'Entrar'
+                                ])
+                            ])
+                        ])
+                    ])
+                );
+            };
+
+            // Dashboard do Consumidor - Versão Premium v4.0
+            const ConsumidorDashboard = () => {
+                const [activeTab, setActiveTab] = useState('marketplace');
+                const [carrinho, setCarrinho] = useState([]);
+                const [showPayment, setShowPayment] = useState(false);
+                const [pedidoParaPagar, setPedidoParaPagar] = useState(null);
+
+                const meusPedidos = pedidos.filter(p => p.clienteId === currentUser.id);
+                const empresasAtivas = empresas.filter(e => e.status === 'ativo');
+
+                const adicionarAoCarrinho = (empresa, produto) => {
+                    const precoFinal = produto.promocao?.ativo ? produto.promocao.precoPromocional : produto.preco;
+                    const itemCarrinho = {
+                        id: Date.now(),
+                        empresaId: empresa.id,
+                        empresaNome: empresa.nome,
+                        nome: produto.nome,
+                        preco: precoFinal,
+                        precoOriginal: produto.preco,
+                        quantidade: 1,
+                        promocao: produto.promocao?.ativo || false
+                    };
+                    setCarrinho([...carrinho, itemCarrinho]);
+
+                    addNotification({
+                        title: 'Item adicionado',
+                        message: `${produto.nome} foi adicionado ao carrinho`,
+                        icon: '🛒',
+                        type: 'success'
+                    });
+                };
+
+                const removerDoCarrinho = (itemId) => {
+                    setCarrinho(carrinho.filter(item => item.id !== itemId));
+                };
+
+                const finalizarPedido = () => {
+                    if (carrinho.length === 0) return;
+
+                    const empresa = empresasAtivas.find(e => e.id === carrinho[0].empresaId);
+                    const subtotal = carrinho.reduce((total, item) => total + (item.preco * item.quantidade), 0);
+                    const taxaEntrega = parseFloat(empresa.taxaEntrega || 0);
+                    const valorTotal = subtotal + taxaEntrega;
+
+                    const novoPedido = {
+                        id: Date.now().toString(),
+                        cliente: currentUser.nome,
+                        clienteId: currentUser.id,
+                        endereco: currentUser.endereco,
+                        localizacaoEntrega: currentUser.localizacao,
+                        telefone: currentUser.telefone,
+                        valor: valorTotal,
+                        status: 'aguardando_pagamento',
+                        items: carrinho.map(item => ({
+                            nome: item.nome,
+                            quantidade: item.quantidade,
+                            preco: item.preco,
+                            precoOriginal: item.precoOriginal,
+                            promocao: item.promocao
+                        })),
+                        empresaId: empresa.id,
+                        empresaNome: empresa.nome,
+                        empresaLocalizacao: empresa.localizacao,
+                        entregadorId: null,
+                        entregadorNome: null,
+                        criadoEm: new Date().toLocaleString('pt-BR'),
+                        tempoEstimado: empresa.tempoEntrega,
+                        observacoes: '',
+                        formaPagamento: null,
+                        statusPagamento: 'pendente',
+                        troco: 0,
+                        taxaEntrega: taxaEntrega,
+                        subtotal: subtotal,
+                        desconto: 0,
+                        cupomAplicado: null,
+                        distanciaKm: 1.2,
+                        tempoEstimadoEntrega: 35,
+                        prioridade: 'normal',
+                        pagamento: {
+                            metodo: null,
+                            status: 'pendente',
+                            transactionId: null,
+                            processadoEm: null
+                        },
+                        historico: [
+                            { 
+                                status: 'aguardando_pagamento', 
+                                timestamp: new Date().toLocaleString('pt-BR'), 
+                                descricao: 'Pedido criado - Aguardando pagamento', 
+                                usuario: currentUser.nome 
+                            }
+                        ],
+                        chatId: `chat_${Date.now()}_${empresa.id}_${currentUser.id}`
+                    };
+
+                    setPedidoParaPagar(novoPedido);
+                    setShowPayment(true);
+                };
+
+                const handlePaymentComplete = (paymentResult) => {
+                    // Atualizar pedido com informações de pagamento
+                    const pedidoAtualizado = {
+                        ...pedidoParaPagar,
+                        status: 'disponivel',
+                        formaPagamento: paymentResult.method,
+                        statusPagamento: 'aprovado',
+                        desconto: paymentResult.discount || 0,
+                        cupomAplicado: paymentResult.coupon,
+                        valor: paymentResult.finalValue,
+                        pagamento: {
+                            metodo: paymentResult.method,
+                            status: 'aprovado',
+                            transactionId: paymentResult.transactionId,
+                            processadoEm: new Date().toISOString()
+                        },
+                        historico: [
+                            ...pedidoParaPagar.historico,
+                            {
+                                status: 'disponivel',
+                                timestamp: new Date().toLocaleString('pt-BR'),
+                                descricao: `Pagamento aprovado via ${paymentResult.method}`,
+                                usuario: currentUser.nome
+                            }
+                        ]
+                    };
+
+                    setPedidos([...pedidos, pedidoAtualizado]);
+                    setCarrinho([]);
+                    setShowPayment(false);
+                    setPedidoParaPagar(null);
+                    setActiveTab('pedidos');
+
+                    addNotification({
+                        title: 'Pedido confirmado!',
+                        message: `Pedido #${pedidoAtualizado.id} foi confirmado e enviado para ${pedidoAtualizado.empresaNome}`,
+                        icon: '✅',
+                        type: 'success'
+                    });
+                };
+
+                const renderMarketplace = () => {
+                    return React.createElement('div', {
+                        className: 'space-y-6'
+                    }, [
+                        // Carrinho
+                        carrinho.length > 0 && React.createElement('div', {
+                            key: 'carrinho',
+                            className: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500 slide-in'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-xl font-bold text-gray-800 mb-4'
+                            }, '🛒 Seu Carrinho'),
+                            React.createElement('div', {
+                                key: 'items',
+                                className: 'space-y-2 mb-4'
+                            }, carrinho.map(item =>
+                                React.createElement('div', {
+                                    key: item.id,
+                                    className: 'flex justify-between items-center p-2 bg-gray-50 rounded'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'item-info',
+                                        className: 'flex-1'
+                                    }, [
+                                        React.createElement('span', {
+                                            key: 'nome',
+                                            className: 'font-medium'
+                                        }, `${item.quantidade}x ${item.nome}`),
+                                        item.promocao && React.createElement('span', {
+                                            key: 'promocao',
+                                            className: 'ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded'
+                                        }, '🏷️ PROMOÇÃO')
+                                    ]),
+                                    React.createElement('div', {
+                                        key: 'actions',
+                                        className: 'flex items-center space-x-2'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'preco',
+                                            className: 'text-right'
+                                        }, [
+                                            item.promocao && React.createElement('span', {
+                                                key: 'original',
+                                                className: 'text-xs text-gray-500 line-through'
+                                            }, `R$ ${(item.precoOriginal * item.quantidade).toFixed(2)}`),
+                                            React.createElement('span', {
+                                                key: 'final',
+                                                className: `font-bold ${item.promocao ? 'text-red-600' : 'text-green-600'}`
+                                            }, `R$ ${(item.preco * item.quantidade).toFixed(2)}`)
+                                        ]),
+                                        React.createElement('button', {
+                                            key: 'remover',
+                                            onClick: () => removerDoCarrinho(item.id),
+                                            className: 'text-red-600 hover:text-red-800'
+                                        }, '❌')
+                                    ])
+                                ])
+                            )),
+                            React.createElement('div', {
+                                key: 'total',
+                                className: 'flex justify-between items-center pt-4 border-t'
+                            }, [
+                                React.createElement('span', {
+                                    key: 'label',
+                                    className: 'text-lg font-bold'
+                                }, 'Subtotal:'),
+                                React.createElement('span', {
+                                    key: 'valor',
+                                    className: 'text-xl font-bold text-green-600'
+                                }, `R$ ${carrinho.reduce((total, item) => total + (item.preco * item.quantidade), 0).toFixed(2)}`)
+                            ]),
+                            React.createElement('button', {
+                                key: 'finalizar',
+                                onClick: finalizarPedido,
+                                className: 'w-full mt-4 bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                            }, '🛒 Finalizar Pedido')
+                        ]),
+
+                        // Lista de empresas
+                        React.createElement('div', {
+                            key: 'empresas',
+                            className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                        }, empresasAtivas.map(empresa => {
+                            return React.createElement('div', {
+                                key: empresa.id,
+                                className: 'bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-200 fade-in'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'header',
+                                    className: 'mb-4'
+                                }, [
+                                    React.createElement('h3', {
+                                        key: 'nome',
+                                        className: 'text-xl font-bold text-gray-800'
+                                    }, empresa.nome),
+                                    React.createElement('p', {
+                                        key: 'categoria',
+                                        className: 'text-gray-600'
+                                    }, empresa.categoria),
+                                    React.createElement('div', {
+                                        key: 'info',
+                                        className: 'flex justify-between items-center mt-2'
+                                    }, [
+                                        React.createElement('span', {
+                                            key: 'avaliacao',
+                                            className: 'text-yellow-500'
+                                        }, `⭐ ${empresa.avaliacaoMedia || 0}/5`),
+                                        React.createElement('span', {
+                                            key: 'tempo',
+                                            className: 'text-gray-500 text-sm'
+                                        }, empresa.tempoEntrega),
+                                        React.createElement('span', {
+                                            key: 'taxa',
+                                            className: 'text-green-600 text-sm font-medium'
+                                        }, `Taxa: R$ ${empresa.taxaEntrega}`)
+                                    ])
+                                ]),
+
+                                React.createElement('div', {
+                                    key: 'produtos',
+                                    className: 'space-y-3'
+                                }, empresa.produtos.filter(p => p.disponivel).map(produto =>
+                                    React.createElement('div', {
+                                        key: produto.id,
+                                        className: 'border border-gray-200 p-3 rounded-lg hover:bg-gray-50 transition duration-200'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'produto-header',
+                                            className: 'flex justify-between items-start mb-2'
+                                        }, [
+                                            React.createElement('div', { key: 'info' }, [
+                                                React.createElement('div', {
+                                                    key: 'nome-container',
+                                                    className: 'flex items-center'
+                                                }, [
+                                                    React.createElement('span', {
+                                                        key: 'emoji',
+                                                        className: 'text-lg mr-2'
+                                                    }, produto.imagem),
+                                                    React.createElement('h4', {
+                                                        key: 'nome',
+                                                        className: 'font-semibold'
+                                                    }, produto.nome),
+                                                    produto.promocao?.ativo && React.createElement('span', {
+                                                        key: 'promo-badge',
+                                                        className: 'ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded'
+                                                    }, '🏷️')
+                                                ]),
+                                                React.createElement('p', {
+                                                    key: 'descricao',
+                                                    className: 'text-gray-600 text-sm'
+                                                }, produto.descricao)
+                                            ]),
+                                            React.createElement('div', {
+                                                key: 'preco',
+                                                className: 'text-right'
+                                            }, [
+                                                produto.promocao?.ativo && React.createElement('span', {
+                                                    key: 'original',
+                                                    className: 'text-sm text-gray-500 line-through block'
+                                                }, `R$ ${produto.preco.toFixed(2)}`),
+                                                React.createElement('span', {
+                                                    key: 'final',
+                                                    className: `font-bold ${produto.promocao?.ativo ? 'text-red-600' : 'text-green-600'}`
+                                                }, `R$ ${(produto.promocao?.ativo ? produto.promocao.precoPromocional : produto.preco).toFixed(2)}`)
+                                            ])
+                                        ]),
+                                        React.createElement('button', {
+                                            key: 'adicionar',
+                                            onClick: () => adicionarAoCarrinho(empresa, produto),
+                                            className: 'w-full bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition duration-200 text-sm'
+                                        }, '➕ Adicionar ao Carrinho')
+                                    ])
+                                ))
+                            ]);
+                        }))
+                    ]);
+                };
+
+                const renderMeusPedidos = () => {
+                    return React.createElement('div', {
+                        className: 'bg-white p-6 rounded-lg shadow-md'
+                    }, [
+                        React.createElement('h3', {
+                            key: 'title',
+                            className: 'text-xl font-bold text-gray-800 mb-6'
+                        }, '📋 Meus Pedidos'),
+                        
+                        meusPedidos.length > 0 ? React.createElement('div', {
+                            key: 'pedidos-list',
+                            className: 'space-y-4'
+                        }, meusPedidos.map(pedido =>
+                            React.createElement('div', {
+                                key: pedido.id,
+                                className: 'border border-gray-200 p-4 rounded-lg fade-in'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'header',
+                                    className: 'flex justify-between items-start mb-4'
+                                }, [
+                                    React.createElement('div', { key: 'info' }, [
+                                        React.createElement('h4', {
+                                            key: 'pedido',
+                                            className: 'font-bold text-lg'
+                                        }, `Pedido #${pedido.id}`),
+                                        React.createElement('p', {
+                                            key: 'empresa',
+                                            className: 'text-gray-600'
+                                        }, pedido.empresaNome),
+                                        React.createElement('p', {
+                                            key: 'data',
+                                            className: 'text-gray-500 text-sm'
+                                        }, new Date(pedido.criadoEm).toLocaleString('pt-BR'))
+                                    ]),
+                                    React.createElement('div', { key: 'status-valor' }, [
+                                        React.createElement('span', {
+                                            key: 'status',
+                                            className: `px-3 py-1 rounded-full text-sm font-medium ${
+                                                pedido.status === 'aguardando_pagamento' ? 'bg-yellow-100 text-yellow-800' :
+                                                pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
+                                                pedido.status === 'em_preparo' ? 'bg-orange-100 text-orange-800' :
+                                                pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                pedido.status === 'em_entrega' ? 'bg-purple-100 text-purple-800' :
+                                                pedido.status === 'entregue' ? 'bg-gray-100 text-gray-800' :
+                                                'bg-gray-100 text-gray-800'
+                                            }`
+                                        }, pedido.status.replace('_', ' ').toUpperCase()),
+                                        React.createElement('p', {
+                                            key: 'valor',
+                                            className: 'font-bold text-green-600 text-lg mt-2'
+                                        }, `R$ ${pedido.valor.toFixed(2)}`)
+                                    ])
+                                ]),
+
+                                React.createElement('div', {
+                                    key: 'items',
+                                    className: 'mb-4'
+                                }, [
+                                    React.createElement('h5', {
+                                        key: 'items-title',
+                                        className: 'font-semibold mb-2'
+                                    }, 'Itens do Pedido:'),
+                                    React.createElement('div', {
+                                        key: 'items-list',
+                                        className: 'bg-gray-50 p-3 rounded space-y-1'
+                                    }, pedido.items.map((item, index) =>
+                                        React.createElement('div', {
+                                            key: index,
+                                            className: 'flex justify-between items-center'
+                                        }, [
+                                            React.createElement('span', {
+                                                key: 'item',
+                                                className: 'text-gray-700'
+                                            }, [
+                                                `${item.quantidade}x ${item.nome}`,
+                                                item.promocao && React.createElement('span', {
+                                                    key: 'promo',
+                                                    className: 'ml-2 text-xs bg-red-100 text-red-600 px-1 rounded'
+                                                }, '🏷️')
+                                            ]),
+                                            React.createElement('div', {
+                                                key: 'preco',
+                                                className: 'text-right'
+                                            }, [
+                                                item.promocao && item.precoOriginal && React.createElement('span', {
+                                                    key: 'original',
+                                                    className: 'text-xs text-gray-500 line-through'
+                                                }, `R$ ${(item.precoOriginal * item.quantidade).toFixed(2)}`),
+                                                React.createElement('span', {
+                                                    key: 'final',
+                                                    className: `text-gray-600 ${item.promocao ? 'text-red-600 font-medium' : ''}`
+                                                }, `R$ ${(item.preco * item.quantidade).toFixed(2)}`)
+                                            ])
+                                        ])
+                                    ))
+                                ]),
+
+                                pedido.cupomAplicado && React.createElement('div', {
+                                    key: 'cupom',
+                                    className: 'mb-4 p-2 bg-green-50 border border-green-200 rounded'
+                                }, [
+                                    React.createElement('p', {
+                                        key: 'cupom-info',
+                                        className: 'text-green-800 text-sm'
+                                    }, `🎟️ Cupom "${pedido.cupomAplicado.id}" aplicado - Desconto: R$ ${pedido.desconto.toFixed(2)}`)
+                                ]),
+
+                                pedido.entregadorNome && React.createElement('div', {
+                                    key: 'entregador',
+                                    className: 'text-gray-600 text-sm mb-2'
+                                }, `🏍️ Entregador: ${pedido.entregadorNome}`),
+
+                                pedido.pagamento && React.createElement('div', {
+                                    key: 'pagamento',
+                                    className: 'text-gray-600 text-sm mb-2'
+                                }, `💳 Pagamento: ${pedido.pagamento.metodo?.toUpperCase()} - ${pedido.pagamento.status?.toUpperCase()}`)
+                            ])
+                        )) : React.createElement('p', {
+                            key: 'no-pedidos',
+                            className: 'text-gray-500 text-center py-8'
+                        }, 'Você ainda não fez nenhum pedido.')
+                    ]);
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, `👤 Olá, ${currentUser.nome}!`),
+                            React.createElement('div', {
+                                key: 'header-actions',
+                                className: 'flex items-center space-x-4'
+                            }, [
+                                React.createElement(NotificationCenter, { key: 'notifications' }),
+                                React.createElement('button', {
+                                    key: 'logout',
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('home');
+                                    },
+                                    className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                                }, 'Sair')
+                            ])
+                        ])
+                    ]),
+
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        // Tabs de navegação
+                        React.createElement('div', {
+                            key: 'tabs',
+                            className: 'flex space-x-4 mb-6'
+                        }, [
+                            React.createElement('button', {
+                                key: 'marketplace-tab',
+                                onClick: () => setActiveTab('marketplace'),
+                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
+                                    activeTab === 'marketplace' 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                }`
+                            }, '🛒 Marketplace'),
+                            React.createElement('button', {
+                                key: 'pedidos-tab',
+                                onClick: () => setActiveTab('pedidos'),
+                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
+                                    activeTab === 'pedidos' 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                }`
+                            }, `📋 Meus Pedidos (${meusPedidos.length})`)
+                        ]),
+
+                        // Conteúdo das tabs
+                        activeTab === 'marketplace' && renderMarketplace(),
+                        activeTab === 'pedidos' && renderMeusPedidos()
+                    ]),
+
+                    // Sistema de pagamento
+                    showPayment && pedidoParaPagar && React.createElement(PaymentSystem, {
+                        key: 'payment-system',
+                        pedido: pedidoParaPagar,
+                        onPaymentComplete: handlePaymentComplete,
+                        onCancel: () => {
+                            setShowPayment(false);
+                            setPedidoParaPagar(null);
+                        }
+                    })
+                ]);
+            };          
+  // Formulários de cadastro (simplificados para esta versão)
+            const CadastroEmpresa = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center fade-in'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800 mb-4'
+                        }, '🏢 Cadastro de Empresa'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-gray-600 mb-6'
+                        }, 'Funcionalidade em desenvolvimento na v4.0 PWA...'),
+                        React.createElement('div', {
+                            key: 'features',
+                            className: 'text-left text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-lg'
+                        }, [
+                            React.createElement('p', { key: 'f1' }, '• 💳 Integração com pagamentos online'),
+                            React.createElement('p', { key: 'f2' }, '• 📊 Dashboard com relatórios avançados'),
+                            React.createElement('p', { key: 'f3' }, '• 🎟️ Sistema de cupons e promoções'),
+                            React.createElement('p', { key: 'f4' }, '• 💬 Chat direto com clientes')
+                        ]),
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                        }, 'Voltar')
+                    ])
+                );
+            };
+
+            const CadastroEntregador = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center fade-in'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800 mb-4'
+                        }, '🏍️ Cadastro de Entregador'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-gray-600 mb-6'
+                        }, 'Funcionalidade em desenvolvimento na v4.0 PWA...'),
+                        React.createElement('div', {
+                            key: 'features',
+                            className: 'text-left text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-lg'
+                        }, [
+                            React.createElement('p', { key: 'f1' }, '• 🗺️ GPS integrado para navegação'),
+                            React.createElement('p', { key: 'f2' }, '• 💰 Carteira digital com PIX'),
+                            React.createElement('p', { key: 'f3' }, '• 📱 App funciona offline'),
+                            React.createElement('p', { key: 'f4' }, '• 🔔 Notificações push em tempo real')
+                        ]),
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                        }, 'Voltar')
+                    ])
+                );
+            };
+
+            const CadastroConsumidor = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center fade-in'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800 mb-4'
+                        }, '👤 Cadastro de Consumidor'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-gray-600 mb-6'
+                        }, 'Funcionalidade em desenvolvimento na v4.0 PWA...'),
+                        React.createElement('div', {
+                            key: 'features',
+                            className: 'text-left text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-lg'
+                        }, [
+                            React.createElement('p', { key: 'f1' }, '• 💳 Pagamentos PIX, cartão e dinheiro'),
+                            React.createElement('p', { key: 'f2' }, '• 🎟️ Sistema de cupons de desconto'),
+                            React.createElement('p', { key: 'f3' }, '• 📍 Múltiplos endereços salvos'),
+                            React.createElement('p', { key: 'f4' }, '• ⭐ Sistema de avaliações')
+                        ]),
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                        }, 'Voltar')
+                    ])
+                );
+            };
+
+            // Renderização principal
+            if (currentView === 'home') {
+                return React.createElement('div', null, [
+                    React.createElement(ConnectionStatus, { key: 'connection' }),
+                    React.createElement(HomeScreen, { key: 'home' }),
+                    React.createElement(PWAInstallBanner, { key: 'pwa-banner' })
+                ]);
+            } else if (currentView === 'login') {
+                return React.createElement('div', null, [
+                    React.createElement(ConnectionStatus, { key: 'connection' }),
+                    React.createElement(LoginForm, { key: 'login' })
+                ]);
+            } else if (currentView === 'cadastro-empresa') {
+                return React.createElement('div', null, [
+                    React.createElement(ConnectionStatus, { key: 'connection' }),
+                    React.createElement(CadastroEmpresa, { key: 'cadastro-empresa' })
+                ]);
+            } else if (currentView === 'cadastro-entregador') {
+                return React.createElement('div', null, [
+                    React.createElement(ConnectionStatus, { key: 'connection' }),
+                    React.createElement(CadastroEntregador, { key: 'cadastro-entregador' })
+                ]);
+            } else if (currentView === 'cadastro-consumidor') {
+                return React.createElement('div', null, [
+                    React.createElement(ConnectionStatus, { key: 'connection' }),
+                    React.createElement(CadastroConsumidor, { key: 'cadastro-consumidor' })
+                ]);
+            } else if (currentView === 'dashboard') {
+                if (currentUser.tipo === 'consumidor') {
+                    return React.createElement('div', null, [
+                        React.createElement(ConnectionStatus, { key: 'connection' }),
+                        React.createElement(ConsumidorDashboard, { key: 'dashboard' })
+                    ]);
+                } else {
+                    // Para esta versão v4, vamos focar no dashboard do consumidor
+                    // Os outros dashboards podem usar as versões anteriores
+                    return React.createElement('div', {
+                        className: 'min-h-screen flex items-center justify-center bg-gray-100'
+                    }, [
+                        React.createElement(ConnectionStatus, { key: 'connection' }),
+                        React.createElement('div', {
+                            key: 'coming-soon',
+                            className: 'bg-white p-8 rounded-lg shadow-xl text-center max-w-md fade-in'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800 mb-4'
+                            }, `🚧 Dashboard ${currentUser.tipo} v4.0`),
+                            React.createElement('p', {
+                                key: 'message',
+                                className: 'text-gray-600 mb-6'
+                            }, 'Dashboard PWA em desenvolvimento. Por enquanto, teste o dashboard do consumidor ou use as versões anteriores para outros usuários.'),
+                            React.createElement('div', {
+                                key: 'suggestions',
+                                className: 'text-left text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-lg'
+                            }, [
+                                React.createElement('p', { key: 's1' }, '• 📱 Teste como consumidor para ver o PWA completo'),
+                                React.createElement('p', { key: 's2' }, '• 💳 Sistema de pagamentos integrado'),
+                                React.createElement('p', { key: 's3' }, '• 🎟️ Cupons de desconto funcionais'),
+                                React.createElement('p', { key: 's4' }, '• 🔔 Notificações push reais')
+                            ]),
+                            React.createElement('div', {
+                                key: 'actions',
+                                className: 'space-y-2'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'test-consumer',
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('login');
+                                        addNotification({
+                                            title: 'Dica',
+                                            message: 'Faça login como consumidor (maria@teste.com / 123456) para testar o PWA completo',
+                                            icon: '💡',
+                                            type: 'info'
+                                        });
+                                    },
+                                    className: 'w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-200'
+                                }, '👤 Testar como Consumidor'),
+                                React.createElement('button', {
+                                    key: 'logout',
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('home');
+                                    },
+                                    className: 'w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                                }, 'Voltar ao Início')
+                            ])
+                        ])
+                    ]);
+                }
+            }
+
+            return React.createElement('div', {
+                className: 'min-h-screen flex items-center justify-center'
+            }, [
+                React.createElement(ConnectionStatus, { key: 'connection' }),
+                React.createElement('div', {
+                    key: 'loading',
+                    className: 'text-center text-white'
+                }, [
+                    React.createElement('div', {
+                        key: 'spinner',
+                        className: 'spinner mx-auto mb-4'
+                    }),
+                    React.createElement('p', {
+                        key: 'text'
+                    }, 'Carregando sistema PWA v4.0...')
+                ])
+            ]);
+        }
+
+        // Renderizar a aplicação
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>

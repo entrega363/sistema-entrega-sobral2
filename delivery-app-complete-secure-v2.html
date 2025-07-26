@@ -507,6 +507,240 @@
                 );
             };
 
+            // Formulário de Cadastro de Empresa
+            const CadastroEmpresa = () => {
+                const [formData, setFormData] = useState({
+                    nome: '',
+                    cnpj: '',
+                    categoria: '',
+                    responsavel: '',
+                    email: '',
+                    telefone: '',
+                    endereco: '',
+                    bairro: '',
+                    senha: '',
+                    confirmarSenha: '',
+                    taxaEntrega: '',
+                    tempoEntrega: ''
+                });
+                const [error, setError] = useState('');
+                const [success, setSuccess] = useState('');
+
+                const categorias = [
+                    'Pizzaria', 'Lanchonete', 'Restaurante', 'Açaí', 'Sorvetes', 
+                    'Comida Japonesa', 'Padaria', 'Farmácia', 'Mercado', 'Outros'
+                ];
+
+                const bairros = [
+                    'Centro', 'Dom Expedito', 'Sinhá Sabóia', 'Junco', 'Pedrinhas',
+                    'Parque Silvana', 'Alto da Brasília', 'Cohab', 'Outros'
+                ];
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    setError('');
+
+                    if (formData.senha !== formData.confirmarSenha) {
+                        setError('As senhas não coincidem');
+                        return;
+                    }
+
+                    if (formData.senha.length < 6) {
+                        setError('A senha deve ter pelo menos 6 caracteres');
+                        return;
+                    }
+
+                    if (empresas.find(emp => emp.email === formData.email)) {
+                        setError('Este email já está cadastrado');
+                        return;
+                    }
+
+                    const novaEmpresa = {
+                        id: 'emp_' + Date.now(),
+                        ...formData,
+                        tipo: 'empresa',
+                        status: 'pendente',
+                        cadastradaEm: new Date().toLocaleString('pt-BR')
+                    };
+                    delete novaEmpresa.confirmarSenha;
+
+                    setEmpresas([...empresas, novaEmpresa]);
+                    setSuccess('Empresa cadastrada com sucesso! Aguarde aprovação do administrador.');
+                    
+                    setFormData({
+                        nome: '', cnpj: '', categoria: '', responsavel: '', email: '',
+                        telefone: '', endereco: '', bairro: '', senha: '', confirmarSenha: '',
+                        taxaEntrega: '', tempoEntrega: ''
+                    });
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, 
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, '🏢 Cadastro de Empresa'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Cadastre seu restaurante ou estabelecimento')
+                        ]),
+
+                        success && React.createElement('div', {
+                            key: 'success',
+                            className: 'mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md'
+                        }, success),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'nome-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'nome' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Nome da Empresa *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.nome,
+                                        onChange: (e) => setFormData({ ...formData, nome: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Ex: Pizza do João'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'categoria' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Categoria *'),
+                                    React.createElement('select', {
+                                        key: 'select',
+                                        required: true,
+                                        value: formData.categoria,
+                                        onChange: (e) => setFormData({ ...formData, categoria: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    }, [
+                                        React.createElement('option', { key: 'default', value: '' }, 'Selecione uma categoria'),
+                                        ...categorias.map(cat => 
+                                            React.createElement('option', { key: cat, value: cat }, cat)
+                                        )
+                                    ])
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'contato-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'email' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Email *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'email',
+                                        required: true,
+                                        value: formData.email,
+                                        onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'empresa@email.com'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'telefone' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Telefone *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'tel',
+                                        required: true,
+                                        value: formData.telefone,
+                                        onChange: (e) => setFormData({ ...formData, telefone: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '(88) 99999-9999'
+                                    })
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'senha-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'senha' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Senha *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'password',
+                                        required: true,
+                                        value: formData.senha,
+                                        onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Mínimo 6 caracteres'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'confirmar' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Confirmar Senha *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'password',
+                                        required: true,
+                                        value: formData.confirmarSenha,
+                                        onChange: (e) => setFormData({ ...formData, confirmarSenha: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Repita a senha'
+                                    })
+                                ])
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center'
+                            }, error),
+
+                            React.createElement('div', {
+                                key: 'buttons',
+                                className: 'flex space-x-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    type: 'button',
+                                    onClick: () => setCurrentView('home'),
+                                    className: 'flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                                }, 'Voltar'),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: 'flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200'
+                                }, 'Cadastrar Empresa')
+                            ])
+                        ])
+                    ])
+                );
+            };
+
             // Dashboard simples para demonstração
             const SimpleDashboard = () => {
                 return React.createElement('div', {
@@ -560,6 +794,8 @@
                 return React.createElement(HomeScreen);
             } else if (currentView === 'login') {
                 return React.createElement(LoginForm);
+            } else if (currentView === 'cadastro-empresa') {
+                return React.createElement(CadastroEmpresa);
             } else if (currentView === 'dashboard') {
                 return React.createElement(SimpleDashboard);
             }

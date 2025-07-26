@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Enhanced v3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet para mapas -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Hook para localStorage
+        function useStoredState(key, initialValue) {
+            const [state, setState] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                try {
+                    setState(value);
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                    // Disparar evento customizado para sincronização
+                    window.dispatchEvent(new CustomEvent('storageUpdate', { 
+                        detail: { key, value } 
+                    }));
+                } catch (error) {
+                    console.error('Erro ao salvar no localStorage:', error);
+                }
+            };
+
+            return [state, setValue];
+        }
+
+        // Hook para notificações
+        function useNotifications() {
+            const [notifications, setNotifications] = useStoredState('delivery_notifications', []);
+
+            const addNotification = (notification) => {
+                const newNotification = {
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                    read: false,
+                    ...notification
+                };
+                setNotifications(prev => [newNotification, ...prev]);
+                
+                // Mostrar notificação do navegador se permitido
+                if (Notification.permission === 'granted') {
+                    new Notification(notification.title, {
+                        body: notification.message,
+                        icon: '🚚'
+                    });
+                }
+            };
+
+            const markAsRead = (notificationId) => {
+                setNotifications(prev => 
+                    prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+                );
+            };
+
+            const clearAll = () => {
+                setNotifications([]);
+            };
+
+            return { notifications, addNotification, markAsRead, clearAll };
+        }
+
+        // Hook para chat em tempo real
+        function useChat() {
+            const [messages, setMessages] = useStoredState('delivery_chat_messages', []);
+            const [activeChats, setActiveChats] = useStoredState('delivery_active_chats', []);
+
+            const sendMessage = (chatId, senderId, senderName, senderType, message) => {
+                const newMessage = {
+                    id: Date.now(),
+                    chatId,
+                    senderId,
+                    senderName,
+                    senderType,
+                    message,
+                    timestamp: new Date().toISOString(),
+                    read: false
+                };
+
+                setMessages(prev => [...prev, newMessage]);
+
+                // Atualizar chat ativo
+                setActiveChats(prev => {
+                    const existingChat = prev.find(c => c.id === chatId);
+                    if (existingChat) {
+                        return prev.map(c => 
+                            c.id === chatId 
+                                ? { ...c, lastMessage: message, lastActivity: new Date().toISOString() }
+                                : c
+                        );
+                    } else {
+                        return [...prev, {
+                            id: chatId,
+                            participants: [senderId],
+                            lastMessage: message,
+                            lastActivity: new Date().toISOString(),
+                            createdAt: new Date().toISOString()
+                        }];
+                    }
+                });
+            };
+
+            const getChatMessages = (chatId) => {
+                return messages.filter(m => m.chatId === chatId).sort((a, b) => 
+                    new Date(a.timestamp) - new Date(b.timestamp)
+                );
+            };
+
+            const markMessagesAsRead = (chatId, userId) => {
+                setMessages(prev => 
+                    prev.map(m => 
+                        m.chatId === chatId && m.senderId !== userId 
+                            ? { ...m, read: true } 
+                            : m
+                    )
+                );
+            };
+
+            return { 
+                messages, 
+                activeChats, 
+                sendMessage, 
+                getChatMessages, 
+                markMessagesAsRead 
+            };
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = useState('home');
+            const [currentUser, setCurrentUser] = useState(null);
+            const { notifications, addNotification, markAsRead, clearAll } = useNotifications();
+            const { messages, activeChats, sendMessage, getChatMessages, markMessagesAsRead } = useChat();
+
+            // Solicitar permissão para notificações
+            useEffect(() => {
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }, []);
+
+            // Verificar se é acesso de administrador
+            useEffect(() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const isAdmin = urlParams.get('admin') === 'true';
+                const adminAuth = localStorage.getItem('admin_authenticated') === 'true';
+                
+                if (isAdmin && adminAuth) {
+                    const adminUser = {
+                        id: 'admin1',
+                        nome: 'Administrador',
+                        email: 'admin',
+                        tipo: 'admin'
+                    };
+                    setCurrentUser(adminUser);
+                    setCurrentView('dashboard');
+                }
+            }, []);
+
+            // Estados dos dados com informações mais completas
+            const [users, setUsers] = useStoredState('delivery_users', [
+                {
+                    id: 'user1',
+                    nome: 'João Entregador',
+                    email: 'joao@teste.com',
+                    senha: '123456',
+                    tipo: 'entregador',
+                    status: 'ativo',
+                    telefone: '(88) 99999-1234',
+                    cpf: '123.456.789-00',
+                    veiculo: 'Moto Honda CG 160',
+                    placa: 'ABC-1234',
+                    disponivel: true,
+                    totalEntregas: 15,
+                    endereco: 'Rua das Palmeiras, 100',
+                    bairro: 'Centro',
+                    cnh: '12345678901',
+                    avaliacaoMedia: 4.8,
+                    avaliacoes: [
+                        { id: 1, cliente: 'Maria Silva', nota: 5, comentario: 'Entrega rápida e educado!', data: '2024-01-20' },
+                        { id: 2, cliente: 'João Santos', nota: 4, comentario: 'Bom atendimento', data: '2024-01-18' }
+                    ],
+                    localizacao: { lat: -3.6914, lng: -40.3492 }, // Sobral, CE
+                    cadastradoEm: '2024-01-15 10:30:00',
+                    ultimaAtividade: new Date().toISOString(),
+                    configuracoes: {
+                        notificacoesPush: true,
+                        notificacoesEmail: true,
+                        raioEntrega: 5, // km
+                        horarioTrabalho: { inicio: '18:00', fim: '23:00' }
+                    }
+                },
+                {
+                    id: 'user2',
+                    nome: 'Maria Entregadora',
+                    email: 'maria.entrega@teste.com',
+                    senha: '123456',
+                    tipo: 'entregador',
+                    status: 'pendente',
+                    telefone: '(88) 99999-5678',
+                    cpf: '987.654.321-00',
+                    veiculo: 'Bicicleta',
+                    placa: 'N/A',
+                    disponivel: false,
+                    totalEntregas: 0,
+                    endereco: 'Rua das Flores, 200',
+                    bairro: 'Dom Expedito',
+                    cnh: '98765432100',
+                    avaliacaoMedia: 0,
+                    avaliacoes: [],
+                    localizacao: { lat: -3.6854, lng: -40.3421 },
+                    cadastradoEm: '2024-01-20 14:15:00',
+                    ultimaAtividade: new Date().toISOString(),
+                    configuracoes: {
+                        notificacoesPush: true,
+                        notificacoesEmail: false,
+                        raioEntrega: 3,
+                        horarioTrabalho: { inicio: '17:00', fim: '22:00' }
+                    }
+                }
+            ]);
+
+            const [empresas, setEmpresas] = useStoredState('delivery_empresas', [
+                {
+                    id: 'emp1',
+                    nome: 'Pizza do Zé',
+                    email: 'pizza@teste.com',
+                    senha: '123456',
+                    tipo: 'empresa',
+                    status: 'ativo',
+                    cnpj: '12.345.678/0001-90',
+                    telefone: '(88) 3611-1234',
+                    categoria: 'Pizzaria',
+                    endereco: 'Rua Coronel Mont\'Alverne, 500 - Centro',
+                    responsavel: 'José Silva',
+                    bairro: 'Centro',
+                    taxaEntrega: '5.00',
+                    tempoEntrega: '30-45 min',
+                    avaliacaoMedia: 4.5,
+                    totalPedidos: 150,
+                    localizacao: { lat: -3.6889, lng: -40.3467 },
+                    avaliacoes: [
+                        { id: 1, cliente: 'Maria Silva', nota: 5, comentario: 'Pizza deliciosa!', data: '2024-01-22' },
+                        { id: 2, cliente: 'João Santos', nota: 4, comentario: 'Boa qualidade', data: '2024-01-20' }
+                    ],
+                    horarioFuncionamento: {
+                        abertura: '18:00',
+                        fechamento: '23:30',
+                        diasFuncionamento: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom']
+                    },
+                    produtos: [
+                        { id: 1, nome: 'Pizza Margherita', preco: 25.90, descricao: 'Molho de tomate, mussarela, manjericão', categoria: 'Pizza', disponivel: true, tempoPrep: 25, imagem: '🍕' },
+                        { id: 2, nome: 'Pizza Calabresa', preco: 28.90, descricao: 'Molho de tomate, mussarela, calabresa, cebola', categoria: 'Pizza', disponivel: true, tempoPrep: 25, imagem: '🍕' },
+                        { id: 3, nome: 'Pizza Portuguesa', preco: 32.90, descricao: 'Molho de tomate, mussarela, presunto, ovos, cebola', categoria: 'Pizza', disponivel: true, tempoPrep: 30, imagem: '🍕' },
+                        { id: 4, nome: 'Coca-Cola 2L', preco: 8.90, descricao: 'Refrigerante Coca-Cola 2 litros', categoria: 'Bebida', disponivel: true, tempoPrep: 0, imagem: '🥤' }
+                    ],
+                    configuracoes: {
+                        aceitaPedidosOnline: true,
+                        tempoMinimoEntrega: 30,
+                        valorMinimoEntrega: 20.00,
+                        formasPagamento: ['dinheiro', 'cartao', 'pix']
+                    },
+                    estatisticas: {
+                        pedidosHoje: 12,
+                        faturamentoHoje: 450.80,
+                        tempoMedioEntrega: 35,
+                        taxaCancelamento: 2.5
+                    },
+                    cadastradaEm: '2024-01-10 09:00:00'
+                },
+                {
+                    id: 'emp2',
+                    nome: 'Burguer House',
+                    email: 'burguer@teste.com',
+                    senha: '123456',
+                    tipo: 'empresa',
+                    status: 'pendente',
+                    cnpj: '98.765.432/0001-10',
+                    telefone: '(88) 3611-5678',
+                    categoria: 'Lanchonete',
+                    endereco: 'Av. Dom José, 300 - Dom Expedito',
+                    responsavel: 'Ana Costa',
+                    bairro: 'Dom Expedito',
+                    taxaEntrega: '4.00',
+                    tempoEntrega: '25-35 min',
+                    avaliacaoMedia: 0,
+                    totalPedidos: 0,
+                    localizacao: { lat: -3.6834, lng: -40.3401 },
+                    avaliacoes: [],
+                    horarioFuncionamento: {
+                        abertura: '17:00',
+                        fechamento: '00:00',
+                        diasFuncionamento: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab']
+                    },
+                    produtos: [
+                        { id: 1, nome: 'X-Burguer', preco: 15.90, descricao: 'Hambúrguer, queijo, alface, tomate', categoria: 'Lanche', disponivel: true, tempoPrep: 15, imagem: '🍔' },
+                        { id: 2, nome: 'X-Salada', preco: 18.90, descricao: 'Hambúrguer, queijo, alface, tomate, milho', categoria: 'Lanche', disponivel: true, tempoPrep: 15, imagem: '🍔' },
+                        { id: 3, nome: 'Batata Frita', preco: 12.90, descricao: 'Porção de batata frita crocante', categoria: 'Acompanhamento', disponivel: true, tempoPrep: 10, imagem: '🍟' },
+                        { id: 4, nome: 'Suco Natural', preco: 6.90, descricao: 'Suco natural de frutas variadas', categoria: 'Bebida', disponivel: true, tempoPrep: 5, imagem: '🧃' }
+                    ],
+                    configuracoes: {
+                        aceitaPedidosOnline: true,
+                        tempoMinimoEntrega: 25,
+                        valorMinimoEntrega: 15.00,
+                        formasPagamento: ['dinheiro', 'cartao']
+                    },
+                    estatisticas: {
+                        pedidosHoje: 0,
+                        faturamentoHoje: 0,
+                        tempoMedioEntrega: 0,
+                        taxaCancelamento: 0
+                    },
+                    cadastradaEm: '2024-01-22 16:45:00'
+                }
+            ]);
+
+            const [consumidores, setConsumidores] = useStoredState('delivery_consumidores', [
+                {
+                    id: 'cons1',
+                    nome: 'Maria Silva',
+                    email: 'maria@teste.com',
+                    senha: '123456',
+                    telefone: '(88) 99999-5678',
+                    cpf: '987.654.321-00',
+                    endereco: 'Rua das Flores, 123',
+                    bairro: 'Centro',
+                    pontoReferencia: 'Próximo ao mercado',
+                    totalPedidos: 8,
+                    localizacao: { lat: -3.6904, lng: -40.3456 },
+                    enderecosFavoritos: [
+                        { id: 1, nome: 'Casa', endereco: 'Rua das Flores, 123 - Centro', referencia: 'Próximo ao mercado', localizacao: { lat: -3.6904, lng: -40.3456 } },
+                        { id: 2, nome: 'Trabalho', endereco: 'Av. Dom José, 456 - Centro', referencia: 'Edifício comercial', localizacao: { lat: -3.6889, lng: -40.3445 } }
+                    ],
+                    configuracoes: {
+                        notificacoesPedido: true,
+                        notificacoesPromocao: true,
+                        formasPagamentoPreferidas: ['pix', 'cartao']
+                    },
+                    cadastradoEm: '2024-01-12 11:20:00'
+                }
+            ]);
+
+            const [pedidos, setPedidos] = useStoredState('delivery_pedidos', [
+                {
+                    id: '1',
+                    cliente: 'Maria Silva',
+                    clienteId: 'cons1',
+                    endereco: 'Rua das Flores, 123 - Centro',
+                    localizacaoEntrega: { lat: -3.6904, lng: -40.3456 },
+                    telefone: '(88) 99999-5678',
+                    valor: 45.90,
+                    status: 'disponivel',
+                    items: [
+                        { nome: 'Pizza Margherita', quantidade: 1, preco: 25.90 },
+                        { nome: 'Coca-Cola 2L', quantidade: 1, preco: 8.90 }
+                    ],
+                    itemsTexto: 'Pizza Margherita, Coca-Cola 2L',
+                    empresaId: 'emp1',
+                    empresaNome: 'Pizza do Zé',
+                    empresaLocalizacao: { lat: -3.6889, lng: -40.3467 },
+                    entregadorId: null,
+                    entregadorNome: null,
+                    criadoEm: '2024-01-25 19:30:00',
+                    tempoEstimado: '30-45 min',
+                    observacoes: 'Sem cebola na pizza',
+                    formaPagamento: 'dinheiro',
+                    troco: 50.00,
+                    taxaEntrega: 5.00,
+                    subtotal: 34.80,
+                    distanciaKm: 1.2,
+                    tempoEstimadoEntrega: 35,
+                    prioridade: 'normal',
+                    historico: [
+                        { status: 'disponivel', timestamp: '2024-01-25 19:30:00', descricao: 'Pedido realizado', usuario: 'Maria Silva' }
+                    ],
+                    chatId: 'chat_1_emp1_cons1'
+                }
+            ]);
+
+            const admins = [
+                {
+                    id: 'admin1',
+                    nome: 'Administrador',
+                    email: 'admin',
+                    senha: 'tenderbr0',
+                    tipo: 'admin'
+                }
+            ];        
+    // Componente de Chat em Tempo Real
+            const ChatSystem = ({ currentUser, onClose }) => {
+                const [selectedChat, setSelectedChat] = useState(null);
+                const [newMessage, setNewMessage] = useState('');
+                const [showChatList, setShowChatList] = useState(true);
+                const messagesEndRef = useRef(null);
+
+                const scrollToBottom = () => {
+                    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+                };
+
+                useEffect(() => {
+                    scrollToBottom();
+                }, [selectedChat]);
+
+                const getUserChats = () => {
+                    return activeChats.filter(chat => 
+                        chat.participants.includes(currentUser.id) ||
+                        chat.id.includes(currentUser.id)
+                    );
+                };
+
+                const createChatId = (userId1, userId2, pedidoId = null) => {
+                    if (pedidoId) {
+                        return `chat_${pedidoId}_${userId1}_${userId2}`;
+                    }
+                    return `chat_${[userId1, userId2].sort().join('_')}`;
+                };
+
+                const startChatWithUser = (targetUser, pedidoId = null) => {
+                    const chatId = createChatId(currentUser.id, targetUser.id, pedidoId);
+                    setSelectedChat({
+                        id: chatId,
+                        targetUser,
+                        pedidoId
+                    });
+                    setShowChatList(false);
+                };
+
+                const sendChatMessage = () => {
+                    if (!newMessage.trim() || !selectedChat) return;
+
+                    sendMessage(
+                        selectedChat.id,
+                        currentUser.id,
+                        currentUser.nome,
+                        currentUser.tipo,
+                        newMessage.trim()
+                    );
+
+                    setNewMessage('');
+
+                    // Notificar o destinatário
+                    addNotification({
+                        title: 'Nova mensagem',
+                        message: `${currentUser.nome}: ${newMessage.trim()}`,
+                        icon: '💬',
+                        type: 'info'
+                    });
+                };
+
+                const renderChatList = () => {
+                    const userChats = getUserChats();
+                    const availableUsers = [];
+
+                    // Adicionar usuários disponíveis para chat baseado no tipo do usuário atual
+                    if (currentUser.tipo === 'admin') {
+                        availableUsers.push(...users.filter(u => u.status === 'ativo'));
+                        availableUsers.push(...empresas.filter(e => e.status === 'ativo'));
+                    } else if (currentUser.tipo === 'empresa') {
+                        availableUsers.push(...users.filter(u => u.status === 'ativo'));
+                        // Adicionar clientes que fizeram pedidos
+                        const clientesComPedidos = pedidos
+                            .filter(p => p.empresaId === currentUser.id)
+                            .map(p => consumidores.find(c => c.id === p.clienteId))
+                            .filter(Boolean);
+                        availableUsers.push(...clientesComPedidos);
+                    } else if (currentUser.tipo === 'entregador') {
+                        availableUsers.push(...empresas.filter(e => e.status === 'ativo'));
+                        // Adicionar clientes de pedidos que está entregando
+                        const clientesEntrega = pedidos
+                            .filter(p => p.entregadorId === currentUser.id)
+                            .map(p => consumidores.find(c => c.id === p.clienteId))
+                            .filter(Boolean);
+                        availableUsers.push(...clientesEntrega);
+                    } else if (currentUser.tipo === 'consumidor') {
+                        // Adicionar empresas que fez pedidos
+                        const empresasPedidos = pedidos
+                            .filter(p => p.clienteId === currentUser.id)
+                            .map(p => empresas.find(e => e.id === p.empresaId))
+                            .filter(Boolean);
+                        availableUsers.push(...empresasPedidos);
+                        
+                        // Adicionar entregadores dos pedidos
+                        const entregadoresPedidos = pedidos
+                            .filter(p => p.clienteId === currentUser.id && p.entregadorId)
+                            .map(p => users.find(u => u.id === p.entregadorId))
+                            .filter(Boolean);
+                        availableUsers.push(...entregadoresPedidos);
+                    }
+
+                    return React.createElement('div', {
+                        className: 'h-full flex flex-col'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'p-4 border-b bg-blue-600 text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'header-content',
+                                className: 'flex justify-between items-center'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'font-bold'
+                                }, '💬 Chat'),
+                                React.createElement('button', {
+                                    key: 'close',
+                                    onClick: onClose,
+                                    className: 'text-white hover:text-gray-200'
+                                }, '✕')
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'content',
+                            className: 'flex-1 overflow-y-auto p-4 space-y-3'
+                        }, [
+                            // Chats ativos
+                            userChats.length > 0 && React.createElement('div', {
+                                key: 'active-chats',
+                                className: 'mb-4'
+                            }, [
+                                React.createElement('h4', {
+                                    key: 'title',
+                                    className: 'font-semibold text-gray-700 mb-2'
+                                }, 'Conversas Ativas'),
+                                ...userChats.map(chat =>
+                                    React.createElement('div', {
+                                        key: chat.id,
+                                        onClick: () => {
+                                            setSelectedChat({ id: chat.id });
+                                            setShowChatList(false);
+                                        },
+                                        className: 'p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition duration-200'
+                                    }, [
+                                        React.createElement('p', {
+                                            key: 'message',
+                                            className: 'font-medium text-gray-800'
+                                        }, chat.lastMessage || 'Iniciar conversa'),
+                                        React.createElement('p', {
+                                            key: 'time',
+                                            className: 'text-xs text-gray-500'
+                                        }, new Date(chat.lastActivity).toLocaleString('pt-BR'))
+                                    ])
+                                )
+                            ]),
+
+                            // Usuários disponíveis
+                            React.createElement('div', {
+                                key: 'available-users'
+                            }, [
+                                React.createElement('h4', {
+                                    key: 'title',
+                                    className: 'font-semibold text-gray-700 mb-2'
+                                }, 'Iniciar Conversa'),
+                                ...availableUsers.map(user =>
+                                    React.createElement('div', {
+                                        key: user.id,
+                                        onClick: () => startChatWithUser(user),
+                                        className: 'p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition duration-200 border'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'user-info',
+                                            className: 'flex items-center space-x-3'
+                                        }, [
+                                            React.createElement('span', {
+                                                key: 'icon',
+                                                className: 'text-2xl'
+                                            }, user.tipo === 'empresa' ? '🏢' : 
+                                               user.tipo === 'entregador' ? '🏍️' : '👤'),
+                                            React.createElement('div', { key: 'details' }, [
+                                                React.createElement('p', {
+                                                    key: 'nome',
+                                                    className: 'font-medium'
+                                                }, user.nome),
+                                                React.createElement('p', {
+                                                    key: 'tipo',
+                                                    className: 'text-sm text-gray-500'
+                                                }, user.tipo === 'empresa' ? 'Empresa' :
+                                                   user.tipo === 'entregador' ? 'Entregador' : 'Cliente')
+                                            ])
+                                        ])
+                                    ])
+                                )
+                            ])
+                        ])
+                    ]);
+                };
+
+                const renderChatWindow = () => {
+                    const chatMessages = getChatMessages(selectedChat.id);
+
+                    return React.createElement('div', {
+                        className: 'h-full flex flex-col'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'p-4 border-b bg-blue-600 text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'header-content',
+                                className: 'flex items-center space-x-3'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'back',
+                                    onClick: () => setShowChatList(true),
+                                    className: 'text-white hover:text-gray-200'
+                                }, '←'),
+                                React.createElement('span', {
+                                    key: 'icon',
+                                    className: 'text-xl'
+                                }, selectedChat.targetUser?.tipo === 'empresa' ? '🏢' : 
+                                   selectedChat.targetUser?.tipo === 'entregador' ? '🏍️' : '👤'),
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'font-bold'
+                                }, selectedChat.targetUser?.nome || 'Chat'),
+                                React.createElement('button', {
+                                    key: 'close',
+                                    onClick: onClose,
+                                    className: 'ml-auto text-white hover:text-gray-200'
+                                }, '✕')
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'messages',
+                            className: 'flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50'
+                        }, [
+                            ...chatMessages.map(message =>
+                                React.createElement('div', {
+                                    key: message.id,
+                                    className: `flex ${message.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'message-bubble',
+                                        className: `max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                                            message.senderId === currentUser.id 
+                                                ? 'bg-blue-600 text-white' 
+                                                : 'bg-white text-gray-800 border'
+                                        }`
+                                    }, [
+                                        message.senderId !== currentUser.id && React.createElement('p', {
+                                            key: 'sender',
+                                            className: 'text-xs text-gray-500 mb-1'
+                                        }, message.senderName),
+                                        React.createElement('p', {
+                                            key: 'text',
+                                            className: 'text-sm'
+                                        }, message.message),
+                                        React.createElement('p', {
+                                            key: 'time',
+                                            className: `text-xs mt-1 ${
+                                                message.senderId === currentUser.id 
+                                                    ? 'text-blue-200' 
+                                                    : 'text-gray-400'
+                                            }`
+                                        }, new Date(message.timestamp).toLocaleTimeString('pt-BR', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }))
+                                    ])
+                                ])
+                            ),
+                            React.createElement('div', {
+                                key: 'messages-end',
+                                ref: messagesEndRef
+                            })
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'input',
+                            className: 'p-4 border-t bg-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'input-container',
+                                className: 'flex space-x-2'
+                            }, [
+                                React.createElement('input', {
+                                    key: 'message-input',
+                                    type: 'text',
+                                    value: newMessage,
+                                    onChange: (e) => setNewMessage(e.target.value),
+                                    onKeyPress: (e) => e.key === 'Enter' && sendChatMessage(),
+                                    placeholder: 'Digite sua mensagem...',
+                                    className: 'flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                }),
+                                React.createElement('button', {
+                                    key: 'send-button',
+                                    onClick: sendChatMessage,
+                                    disabled: !newMessage.trim(),
+                                    className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200'
+                                }, '📤')
+                            ])
+                        ])
+                    ]);
+                };
+
+                return React.createElement('div', {
+                    className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+                }, [
+                    React.createElement('div', {
+                        key: 'chat-modal',
+                        className: 'bg-white rounded-lg shadow-xl w-full max-w-md h-96 max-h-screen'
+                    }, [
+                        showChatList ? renderChatList() : renderChatWindow()
+                    ])
+                ]);
+            };
+
+            // Componente de Mapa Interativo
+            const MapComponent = ({ pedidos, empresas, entregadores, onPedidoSelect }) => {
+                const mapRef = useRef(null);
+                const mapInstanceRef = useRef(null);
+
+                useEffect(() => {
+                    if (!mapRef.current || mapInstanceRef.current) return;
+
+                    // Inicializar mapa centrado em Sobral, CE
+                    mapInstanceRef.current = L.map(mapRef.current).setView([-3.6889, -40.3467], 13);
+
+                    // Adicionar camada do mapa
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(mapInstanceRef.current);
+
+                    return () => {
+                        if (mapInstanceRef.current) {
+                            mapInstanceRef.current.remove();
+                            mapInstanceRef.current = null;
+                        }
+                    };
+                }, []);
+
+                useEffect(() => {
+                    if (!mapInstanceRef.current) return;
+
+                    // Limpar marcadores existentes
+                    mapInstanceRef.current.eachLayer((layer) => {
+                        if (layer instanceof L.Marker) {
+                            mapInstanceRef.current.removeLayer(layer);
+                        }
+                    });
+
+                    // Adicionar marcadores de empresas
+                    empresas.forEach(empresa => {
+                        if (empresa.localizacao) {
+                            const marker = L.marker([empresa.localizacao.lat, empresa.localizacao.lng])
+                                .addTo(mapInstanceRef.current)
+                                .bindPopup(`
+                                    <div>
+                                        <h3><strong>🏢 ${empresa.nome}</strong></h3>
+                                        <p>${empresa.categoria}</p>
+                                        <p>⭐ ${empresa.avaliacaoMedia}/5</p>
+                                        <p>📍 ${empresa.endereco}</p>
+                                    </div>
+                                `);
+                        }
+                    });
+
+                    // Adicionar marcadores de entregadores ativos
+                    entregadores.filter(e => e.disponivel).forEach(entregador => {
+                        if (entregador.localizacao) {
+                            const marker = L.marker([entregador.localizacao.lat, entregador.localizacao.lng])
+                                .addTo(mapInstanceRef.current)
+                                .bindPopup(`
+                                    <div>
+                                        <h3><strong>🏍️ ${entregador.nome}</strong></h3>
+                                        <p>Disponível para entregas</p>
+                                        <p>⭐ ${entregador.avaliacaoMedia}/5</p>
+                                        <p>🚗 ${entregador.veiculo}</p>
+                                    </div>
+                                `);
+                        }
+                    });
+
+                    // Adicionar marcadores de pedidos
+                    pedidos.forEach(pedido => {
+                        if (pedido.localizacaoEntrega) {
+                            const statusColors = {
+                                'disponivel': 'blue',
+                                'em_preparo': 'orange',
+                                'pronto': 'green',
+                                'em_entrega': 'purple',
+                                'entregue': 'gray'
+                            };
+
+                            const marker = L.marker([pedido.localizacaoEntrega.lat, pedido.localizacaoEntrega.lng])
+                                .addTo(mapInstanceRef.current)
+                                .bindPopup(`
+                                    <div>
+                                        <h3><strong>📦 Pedido #${pedido.id}</strong></h3>
+                                        <p>Cliente: ${pedido.cliente}</p>
+                                        <p>Status: ${pedido.status.replace('_', ' ').toUpperCase()}</p>
+                                        <p>Valor: R$ ${pedido.valor.toFixed(2)}</p>
+                                        <p>📍 ${pedido.endereco}</p>
+                                        ${pedido.entregadorNome ? `<p>🏍️ ${pedido.entregadorNome}</p>` : ''}
+                                    </div>
+                                `);
+
+                            marker.on('click', () => {
+                                if (onPedidoSelect) {
+                                    onPedidoSelect(pedido);
+                                }
+                            });
+                        }
+                    });
+                }, [pedidos, empresas, entregadores]);
+
+                return React.createElement('div', {
+                    ref: mapRef,
+                    className: 'w-full h-full rounded-lg',
+                    style: { minHeight: '400px' }
+                });
+            };
+
+            // Componente de Relatórios Avançados
+            const AdvancedReports = ({ currentUser }) => {
+                const [activeReport, setActiveReport] = useState('vendas');
+                const chartRef = useRef(null);
+
+                const generateSalesData = () => {
+                    const last7Days = Array.from({ length: 7 }, (_, i) => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - (6 - i));
+                        return date.toLocaleDateString('pt-BR', { weekday: 'short' });
+                    });
+
+                    return {
+                        labels: last7Days,
+                        datasets: [{
+                            label: 'Vendas (R$)',
+                            data: [450, 320, 680, 590, 720, 480, 650],
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4
+                        }]
+                    };
+                };
+
+                const generateOrdersData = () => {
+                    const statusData = {
+                        'Disponível': pedidos.filter(p => p.status === 'disponivel').length,
+                        'Em Preparo': pedidos.filter(p => p.status === 'em_preparo').length,
+                        'Pronto': pedidos.filter(p => p.status === 'pronto').length,
+                        'Em Entrega': pedidos.filter(p => p.status === 'em_entrega').length,
+                        'Entregue': pedidos.filter(p => p.status === 'entregue').length
+                    };
+
+                    return {
+                        labels: Object.keys(statusData),
+                        datasets: [{
+                            data: Object.values(statusData),
+                            backgroundColor: [
+                                '#3B82F6', // blue
+                                '#F59E0B', // yellow
+                                '#10B981', // green
+                                '#8B5CF6', // purple
+                                '#6B7280'  // gray
+                            ]
+                        }]
+                    };
+                };
+
+                useEffect(() => {
+                    if (!chartRef.current) return;
+
+                    const ctx = chartRef.current.getContext('2d');
+                    
+                    // Destruir gráfico anterior se existir
+                    if (window.currentChart) {
+                        window.currentChart.destroy();
+                    }
+
+                    let chartData, chartType;
+
+                    if (activeReport === 'vendas') {
+                        chartData = generateSalesData();
+                        chartType = 'line';
+                    } else if (activeReport === 'pedidos') {
+                        chartData = generateOrdersData();
+                        chartType = 'doughnut';
+                    }
+
+                    window.currentChart = new Chart(ctx, {
+                        type: chartType,
+                        data: chartData,
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            }
+                        }
+                    });
+
+                    return () => {
+                        if (window.currentChart) {
+                            window.currentChart.destroy();
+                        }
+                    };
+                }, [activeReport, pedidos]);
+
+                const renderMetrics = () => {
+                    const totalPedidos = pedidos.length;
+                    const totalFaturamento = pedidos.reduce((sum, p) => sum + p.valor, 0);
+                    const pedidosHoje = pedidos.filter(p => {
+                        const hoje = new Date().toDateString();
+                        const pedidoData = new Date(p.criadoEm).toDateString();
+                        return hoje === pedidoData;
+                    }).length;
+                    const ticketMedio = totalPedidos > 0 ? totalFaturamento / totalPedidos : 0;
+
+                    return React.createElement('div', {
+                        className: 'grid grid-cols-1 md:grid-cols-4 gap-6 mb-8'
+                    }, [
+                        React.createElement('div', {
+                            key: 'total-pedidos',
+                            className: 'bg-blue-500 text-white p-6 rounded-lg shadow-md'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold mb-2'
+                            }, 'Total de Pedidos'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-3xl font-bold'
+                            }, totalPedidos),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-sm opacity-80'
+                            }, `Hoje: ${pedidosHoje}`)
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'faturamento',
+                            className: 'bg-green-500 text-white p-6 rounded-lg shadow-md'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold mb-2'
+                            }, 'Faturamento Total'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-3xl font-bold'
+                            }, `R$ ${totalFaturamento.toFixed(2)}`),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-sm opacity-80'
+                            }, 'Últimos 30 dias')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'ticket-medio',
+                            className: 'bg-purple-500 text-white p-6 rounded-lg shadow-md'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold mb-2'
+                            }, 'Ticket Médio'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-3xl font-bold'
+                            }, `R$ ${ticketMedio.toFixed(2)}`),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-sm opacity-80'
+                            }, 'Por pedido')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'empresas-ativas',
+                            className: 'bg-orange-500 text-white p-6 rounded-lg shadow-md'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold mb-2'
+                            }, 'Empresas Ativas'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-3xl font-bold'
+                            }, empresas.filter(e => e.status === 'ativo').length),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-sm opacity-80'
+                            }, `Total: ${empresas.length}`)
+                        ])
+                    ]);
+                };
+
+                return React.createElement('div', {
+                    className: 'space-y-6'
+                }, [
+                    renderMetrics(),
+
+                    React.createElement('div', {
+                        key: 'reports-section',
+                        className: 'bg-white p-6 rounded-lg shadow-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'tabs',
+                            className: 'flex space-x-4 mb-6'
+                        }, [
+                            React.createElement('button', {
+                                key: 'vendas-tab',
+                                onClick: () => setActiveReport('vendas'),
+                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
+                                    activeReport === 'vendas' 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`
+                            }, '📈 Vendas'),
+                            React.createElement('button', {
+                                key: 'pedidos-tab',
+                                onClick: () => setActiveReport('pedidos'),
+                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
+                                    activeReport === 'pedidos' 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`
+                            }, '📊 Status dos Pedidos')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'chart-container',
+                            className: 'relative h-96'
+                        }, [
+                            React.createElement('canvas', {
+                                key: 'chart',
+                                ref: chartRef,
+                                className: 'w-full h-full'
+                            })
+                        ])
+                    ])
+                ]);
+            };  
+          // Componente de Notificações
+            const NotificationCenter = () => {
+                const [showNotifications, setShowNotifications] = useState(false);
+                const unreadCount = notifications.filter(n => !n.read).length;
+
+                return React.createElement('div', {
+                    className: 'relative'
+                }, [
+                    React.createElement('button', {
+                        key: 'bell',
+                        onClick: () => setShowNotifications(!showNotifications),
+                        className: 'relative p-2 text-gray-600 hover:text-gray-800 transition duration-200'
+                    }, [
+                        React.createElement('span', {
+                            key: 'icon',
+                            className: 'text-2xl'
+                        }, '🔔'),
+                        unreadCount > 0 && React.createElement('span', {
+                            key: 'badge',
+                            className: 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center'
+                        }, unreadCount > 9 ? '9+' : unreadCount)
+                    ]),
+
+                    showNotifications && React.createElement('div', {
+                        key: 'dropdown',
+                        className: 'absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-50 max-h-96 overflow-y-auto'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'p-4 border-b flex justify-between items-center'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'font-bold text-gray-800'
+                            }, 'Notificações'),
+                            notifications.length > 0 && React.createElement('button', {
+                                key: 'clear',
+                                onClick: clearAll,
+                                className: 'text-sm text-blue-600 hover:text-blue-800'
+                            }, 'Limpar todas')
+                        ]),
+
+                        notifications.length > 0 ? React.createElement('div', {
+                            key: 'list',
+                            className: 'divide-y'
+                        }, notifications.slice(0, 10).map(notification =>
+                            React.createElement('div', {
+                                key: notification.id,
+                                onClick: () => markAsRead(notification.id),
+                                className: `p-4 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`
+                            }, [
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'flex items-start space-x-3'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'icon',
+                                        className: 'text-2xl'
+                                    }, notification.icon || '📢'),
+                                    React.createElement('div', {
+                                        key: 'text',
+                                        className: 'flex-1'
+                                    }, [
+                                        React.createElement('h4', {
+                                            key: 'title',
+                                            className: `font-medium ${!notification.read ? 'text-blue-900' : 'text-gray-900'}`
+                                        }, notification.title),
+                                        React.createElement('p', {
+                                            key: 'message',
+                                            className: 'text-sm text-gray-600 mt-1'
+                                        }, notification.message),
+                                        React.createElement('p', {
+                                            key: 'time',
+                                            className: 'text-xs text-gray-400 mt-1'
+                                        }, new Date(notification.timestamp).toLocaleString('pt-BR'))
+                                    ])
+                                ])
+                            ])
+                        )) : React.createElement('div', {
+                            key: 'empty',
+                            className: 'p-8 text-center text-gray-500'
+                        }, [
+                            React.createElement('span', {
+                                key: 'icon',
+                                className: 'text-4xl mb-2 block'
+                            }, '🔕'),
+                            React.createElement('p', {
+                                key: 'text'
+                            }, 'Nenhuma notificação')
+                        ])
+                    ])
+                ]);
+            };
+
+            // Tela inicial com opções
+            const HomeScreen = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-6xl mb-4'
+                            }, '🚚'),
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Sistema Entrega Sobral'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Plataforma completa de delivery'),
+                            React.createElement('div', {
+                                key: 'version',
+                                className: 'mt-2 text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full inline-block'
+                            }, 'v3.0 - Premium Features')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'features',
+                            className: 'mb-6 text-center'
+                        }, [
+                            React.createElement('div', {
+                                key: 'feature-list',
+                                className: 'grid grid-cols-2 gap-2 text-xs text-gray-600'
+                            }, [
+                                React.createElement('span', { key: 'f1' }, '💬 Chat em Tempo Real'),
+                                React.createElement('span', { key: 'f2' }, '🗺️ Mapas Interativos'),
+                                React.createElement('span', { key: 'f3' }, '📊 Relatórios Avançados'),
+                                React.createElement('span', { key: 'f4' }, '🔔 Notificações Push')
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'options',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('button', {
+                                key: 'login',
+                                onClick: () => setCurrentView('login'),
+                                className: 'w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium'
+                            }, '🔑 Fazer Login'),
+
+                            React.createElement('div', {
+                                key: 'divider',
+                                className: 'text-center text-gray-500 text-sm'
+                            }, 'ou cadastre-se como:'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-empresa',
+                                onClick: () => setCurrentView('cadastro-empresa'),
+                                className: 'w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                            }, '🏢 Empresa/Restaurante'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-entregador',
+                                onClick: () => setCurrentView('cadastro-entregador'),
+                                className: 'w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 transition duration-200 font-medium'
+                            }, '🏍️ Entregador'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-consumidor',
+                                onClick: () => setCurrentView('cadastro-consumidor'),
+                                className: 'w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition duration-200 font-medium'
+                            }, '👤 Cliente/Consumidor')
+                        ])
+                    ])
+                );
+            };
+
+            // Formulário de Login
+            const LoginForm = () => {
+                const [formData, setFormData] = useState({
+                    email: '',
+                    senha: '',
+                    tipo: ''
+                });
+                const [error, setError] = useState('');
+                const [loading, setLoading] = useState(false);
+
+                const handleSubmit = async (e) => {
+                    e.preventDefault();
+                    setError('');
+                    setLoading(true);
+
+                    // Simular delay de autenticação
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    let user = null;
+
+                    // Verificar admin
+                    if (formData.tipo === 'admin') {
+                        const admin = admins.find(a => a.email === formData.email && a.senha === formData.senha);
+                        if (admin) {
+                            user = admin;
+                        }
+                    }
+                    // Verificar empresa
+                    else if (formData.tipo === 'empresa') {
+                        const empresa = empresas.find(e => e.email === formData.email && e.senha === formData.senha);
+                        if (empresa) {
+                            if (empresa.status !== 'ativo') {
+                                setError('Sua conta ainda não foi aprovada pelo administrador.');
+                                setLoading(false);
+                                return;
+                            }
+                            user = empresa;
+                        }
+                    }
+                    // Verificar entregador
+                    else if (formData.tipo === 'entregador') {
+                        const entregador = users.find(u => u.email === formData.email && u.senha === formData.senha && u.tipo === 'entregador');
+                        if (entregador) {
+                            if (entregador.status !== 'ativo') {
+                                setError('Sua conta ainda não foi aprovada pelo administrador.');
+                                setLoading(false);
+                                return;
+                            }
+                            user = entregador;
+                            // Atualizar última atividade
+                            setUsers(users.map(u => 
+                                u.id === entregador.id ? { ...u, ultimaAtividade: new Date().toISOString() } : u
+                            ));
+                        }
+                    }
+                    // Verificar consumidor
+                    else if (formData.tipo === 'consumidor') {
+                        const consumidor = consumidores.find(c => c.email === formData.email && c.senha === formData.senha);
+                        if (consumidor) {
+                            user = consumidor;
+                            user.tipo = 'consumidor';
+                        }
+                    }
+
+                    if (user) {
+                        setCurrentUser(user);
+                        setCurrentView('dashboard');
+                        
+                        // Notificação de login
+                        addNotification({
+                            title: 'Login realizado',
+                            message: `Bem-vindo(a), ${user.nome}! Sistema v3.0 carregado.`,
+                            icon: '👋',
+                            type: 'success'
+                        });
+                    } else {
+                        setError('Email ou senha incorretos.');
+                    }
+                    
+                    setLoading(false);
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, '🔑 Login'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Acesse sua conta - v3.0')
+                        ]),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', { key: 'tipo' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Tipo de Usuário *'),
+                                React.createElement('select', {
+                                    key: 'select',
+                                    required: true,
+                                    value: formData.tipo,
+                                    onChange: (e) => setFormData({ ...formData, tipo: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    disabled: loading
+                                }, [
+                                    React.createElement('option', { key: 'default', value: '' }, 'Selecione o tipo'),
+                                    React.createElement('option', { key: 'admin', value: 'admin' }, '👨‍💼 Administrador'),
+                                    React.createElement('option', { key: 'empresa', value: 'empresa' }, '🏢 Empresa'),
+                                    React.createElement('option', { key: 'entregador', value: 'entregador' }, '🏍️ Entregador'),
+                                    React.createElement('option', { key: 'consumidor', value: 'consumidor' }, '👤 Cliente')
+                                ])
+                            ]),
+
+                            React.createElement('div', { key: 'email' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Email *'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'email',
+                                    required: true,
+                                    value: formData.email,
+                                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: 'seu@email.com',
+                                    disabled: loading
+                                })
+                            ]),
+
+                            React.createElement('div', { key: 'senha' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Senha *'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'password',
+                                    required: true,
+                                    value: formData.senha,
+                                    onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: 'Sua senha',
+                                    disabled: loading
+                                })
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center bg-red-50 p-3 rounded-md'
+                            }, error),
+
+                            React.createElement('div', {
+                                key: 'buttons',
+                                className: 'flex space-x-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    type: 'button',
+                                    onClick: () => {
+                                        setCurrentView('home');
+                                        setError('');
+                                    },
+                                    className: 'flex-1 bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium',
+                                    disabled: loading
+                                }, 'Voltar'),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: `flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium ${loading ? 'opacity-50 cursor-not-allowed' : ''}`,
+                                    disabled: loading
+                                }, loading ? '⏳ Entrando...' : 'Entrar')
+                            ])
+                        ])
+                    ])
+                );
+            };
+
+            // Dashboard do Administrador - Versão Premium
+            const AdminDashboard = () => {
+                const [activeTab, setActiveTab] = useState('overview');
+                const [showChat, setShowChat] = useState(false);
+                const [selectedPedido, setSelectedPedido] = useState(null);
+
+                const pendingUsers = users.filter(u => u.status === 'pendente');
+                const pendingEmpresas = empresas.filter(e => e.status === 'pendente');
+                const activeUsers = users.filter(u => u.status === 'ativo');
+                const activeEmpresas = empresas.filter(e => e.status === 'ativo');
+
+                const approveUser = (userId, type) => {
+                    if (type === 'entregador') {
+                        setUsers(users.map(u => u.id === userId ? { ...u, status: 'ativo' } : u));
+                        const user = users.find(u => u.id === userId);
+                        addNotification({
+                            title: 'Entregador aprovado',
+                            message: `${user.nome} foi aprovado como entregador`,
+                            icon: '✅',
+                            type: 'success'
+                        });
+                    } else if (type === 'empresa') {
+                        setEmpresas(empresas.map(e => e.id === userId ? { ...e, status: 'ativo' } : e));
+                        const empresa = empresas.find(e => e.id === userId);
+                        addNotification({
+                            title: 'Empresa aprovada',
+                            message: `${empresa.nome} foi aprovada`,
+                            icon: '✅',
+                            type: 'success'
+                        });
+                    }
+                };
+
+                const rejectUser = (userId, type) => {
+                    if (type === 'entregador') {
+                        const user = users.find(u => u.id === userId);
+                        setUsers(users.filter(u => u.id !== userId));
+                        addNotification({
+                            title: 'Entregador rejeitado',
+                            message: `Cadastro de ${user.nome} foi rejeitado`,
+                            icon: '❌',
+                            type: 'warning'
+                        });
+                    } else if (type === 'empresa') {
+                        const empresa = empresas.find(e => e.id === userId);
+                        setEmpresas(empresas.filter(e => e.id !== userId));
+                        addNotification({
+                            title: 'Empresa rejeitada',
+                            message: `Cadastro de ${empresa.nome} foi rejeitado`,
+                            icon: '❌',
+                            type: 'warning'
+                        });
+                    }
+                };
+
+                const renderOverview = () => {
+                    const pedidosHoje = pedidos.filter(p => {
+                        const hoje = new Date().toDateString();
+                        const pedidoData = new Date(p.criadoEm).toDateString();
+                        return hoje === pedidoData;
+                    });
+
+                    const faturamentoHoje = pedidosHoje.reduce((total, pedido) => total + pedido.valor, 0);
+
+                    return React.createElement('div', {
+                        className: 'space-y-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'stats',
+                            className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'total-pedidos',
+                                className: 'bg-blue-500 text-white p-6 rounded-lg shadow-md'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'text-3xl mb-2'
+                                }, '📦'),
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'text-lg font-semibold'
+                                }, 'Pedidos Hoje'),
+                                React.createElement('p', {
+                                    key: 'value',
+                                    className: 'text-2xl font-bold'
+                                }, pedidosHoje.length),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-sm opacity-80'
+                                }, `Total: ${pedidos.length}`)
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'faturamento',
+                                className: 'bg-green-500 text-white p-6 rounded-lg shadow-md'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'text-3xl mb-2'
+                                }, '💰'),
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'text-lg font-semibold'
+                                }, 'Faturamento Hoje'),
+                                React.createElement('p', {
+                                    key: 'value',
+                                    className: 'text-2xl font-bold'
+                                }, `R$ ${faturamentoHoje.toFixed(2)}`),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-sm opacity-80'
+                                }, 'Comissão: R$ ' + (faturamentoHoje * 0.05).toFixed(2))
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'empresas-ativas',
+                                className: 'bg-purple-500 text-white p-6 rounded-lg shadow-md'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'text-3xl mb-2'
+                                }, '🏢'),
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'text-lg font-semibold'
+                                }, 'Empresas Ativas'),
+                                React.createElement('p', {
+                                    key: 'value',
+                                    className: 'text-2xl font-bold'
+                                }, activeEmpresas.length),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-sm opacity-80'
+                                }, `Pendentes: ${pendingEmpresas.length}`)
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'entregadores-ativos',
+                                className: 'bg-orange-500 text-white p-6 rounded-lg shadow-md'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'text-3xl mb-2'
+                                }, '🏍️'),
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'text-lg font-semibold'
+                                }, 'Entregadores Ativos'),
+                                React.createElement('p', {
+                                    key: 'value',
+                                    className: 'text-2xl font-bold'
+                                }, activeUsers.length),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-sm opacity-80'
+                                }, `Disponíveis: ${activeUsers.filter(u => u.disponivel).length}`)
+                            ])
+                        ]),
+
+                        // Mapa em tempo real
+                        React.createElement('div', {
+                            key: 'mapa-tempo-real',
+                            className: 'bg-white p-6 rounded-lg shadow-md'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-xl font-bold text-gray-800 mb-4'
+                            }, '🗺️ Mapa em Tempo Real'),
+                            React.createElement(MapComponent, {
+                                key: 'map',
+                                pedidos: pedidos,
+                                empresas: empresas.filter(e => e.status === 'ativo'),
+                                entregadores: users.filter(u => u.tipo === 'entregador' && u.status === 'ativo'),
+                                onPedidoSelect: setSelectedPedido
+                            })
+                        ])
+                    ]);
+                };
+
+                const renderReports = () => {
+                    return React.createElement(AdvancedReports, {
+                        key: 'reports',
+                        currentUser: currentUser
+                    });
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, '👨‍💼 Painel Administrativo v3.0'),
+                            React.createElement('div', {
+                                key: 'header-actions',
+                                className: 'flex items-center space-x-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'chat',
+                                    onClick: () => setShowChat(true),
+                                    className: 'p-2 text-gray-600 hover:text-gray-800 transition duration-200'
+                                }, '💬'),
+                                React.createElement(NotificationCenter, { key: 'notifications' }),
+                                React.createElement('button', {
+                                    key: 'logout',
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('home');
+                                        localStorage.removeItem('admin_authenticated');
+                                    },
+                                    className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                                }, 'Sair')
+                            ])
+                        ])
+                    ]),
+
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        // Tabs de navegação
+                        React.createElement('div', {
+                            key: 'tabs',
+                            className: 'flex space-x-4 mb-6'
+                        }, [
+                            React.createElement('button', {
+                                key: 'overview-tab',
+                                onClick: () => setActiveTab('overview'),
+                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
+                                    activeTab === 'overview' 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                }`
+                            }, '📊 Visão Geral'),
+                            React.createElement('button', {
+                                key: 'reports-tab',
+                                onClick: () => setActiveTab('reports'),
+                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
+                                    activeTab === 'reports' 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                }`
+                            }, '📈 Relatórios Avançados')
+                        ]),
+
+                        // Conteúdo das tabs
+                        activeTab === 'overview' && renderOverview(),
+                        activeTab === 'reports' && renderReports()
+                    ]),
+
+                    // Chat modal
+                    showChat && React.createElement(ChatSystem, {
+                        key: 'chat-system',
+                        currentUser: currentUser,
+                        onClose: () => setShowChat(false)
+                    })
+                ]);
+            };  
+          // Formulários de cadastro (simplificados para esta versão)
+            const CadastroEmpresa = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800 mb-4'
+                        }, '🏢 Cadastro de Empresa'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-gray-600 mb-6'
+                        }, 'Funcionalidade em desenvolvimento na v3.0...'),
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                        }, 'Voltar')
+                    ])
+                );
+            };
+
+            const CadastroEntregador = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800 mb-4'
+                        }, '🏍️ Cadastro de Entregador'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-gray-600 mb-6'
+                        }, 'Funcionalidade em desenvolvimento na v3.0...'),
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                        }, 'Voltar')
+                    ])
+                );
+            };
+
+            const CadastroConsumidor = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800 mb-4'
+                        }, '👤 Cadastro de Consumidor'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-gray-600 mb-6'
+                        }, 'Funcionalidade em desenvolvimento na v3.0...'),
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                        }, 'Voltar')
+                    ])
+                );
+            };
+
+            // Renderização principal
+            if (currentView === 'home') {
+                return React.createElement(HomeScreen);
+            } else if (currentView === 'login') {
+                return React.createElement(LoginForm);
+            } else if (currentView === 'cadastro-empresa') {
+                return React.createElement(CadastroEmpresa);
+            } else if (currentView === 'cadastro-entregador') {
+                return React.createElement(CadastroEntregador);
+            } else if (currentView === 'cadastro-consumidor') {
+                return React.createElement(CadastroConsumidor);
+            } else if (currentView === 'dashboard') {
+                if (currentUser.tipo === 'admin') {
+                    return React.createElement(AdminDashboard);
+                } else {
+                    // Para esta versão v3, vamos focar no dashboard do admin
+                    // Os outros dashboards podem ser implementados posteriormente
+                    return React.createElement('div', {
+                        className: 'min-h-screen flex items-center justify-center bg-gray-100'
+                    }, [
+                        React.createElement('div', {
+                            key: 'coming-soon',
+                            className: 'bg-white p-8 rounded-lg shadow-xl text-center max-w-md'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800 mb-4'
+                            }, `🚧 Dashboard ${currentUser.tipo} v3.0`),
+                            React.createElement('p', {
+                                key: 'message',
+                                className: 'text-gray-600 mb-6'
+                            }, 'Dashboard premium em desenvolvimento. Por enquanto, teste o dashboard do administrador.'),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: () => {
+                                    setCurrentUser(null);
+                                    setCurrentView('home');
+                                },
+                                className: 'bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200'
+                            }, 'Voltar ao Início')
+                        ])
+                    ]);
+                }
+            }
+
+            return React.createElement('div', {
+                className: 'min-h-screen flex items-center justify-center'
+            }, React.createElement('p', null, 'Carregando sistema v3.0...'));
+        }
+
+        // Renderizar a aplicação
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
