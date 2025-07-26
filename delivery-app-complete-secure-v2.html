@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Completo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Hook para localStorage
+        function useStoredState(key, initialValue) {
+            const [state, setState] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                try {
+                    setState(value);
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.error('Erro ao salvar no localStorage:', error);
+                }
+            };
+
+            return [state, setValue];
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = useState('home');
+            const [currentUser, setCurrentUser] = useState(null);
+
+            // Verificar se é acesso de administrador
+            useEffect(() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const isAdmin = urlParams.get('admin') === 'true';
+                const adminAuth = localStorage.getItem('admin_authenticated') === 'true';
+                
+                if (isAdmin && adminAuth) {
+                    // Criar usuário admin temporário
+                    const adminUser = {
+                        id: 'admin1',
+                        nome: 'Administrador',
+                        email: 'admin',
+                        tipo: 'admin'
+                    };
+                    setCurrentUser(adminUser);
+                    setCurrentView('dashboard');
+                }
+            }, []);
+
+            // Estados dos dados (dados de exemplo)
+            const [users, setUsers] = useStoredState('delivery_users', [
+                {
+                    id: 'user1',
+                    nome: 'João Entregador',
+                    email: 'joao@teste.com',
+                    senha: '123456',
+                    tipo: 'entregador',
+                    status: 'ativo',
+                    telefone: '(88) 99999-1234',
+                    cpf: '123.456.789-00',
+                    veiculo: 'Moto Honda CG 160',
+                    placa: 'ABC-1234',
+                    disponivel: true,
+                    totalEntregas: 15,
+                    endereco: 'Rua das Palmeiras, 100',
+                    bairro: 'Centro',
+                    cnh: '12345678901'
+                }
+            ]);
+
+            const [empresas, setEmpresas] = useStoredState('delivery_empresas', [
+                {
+                    id: 'emp1',
+                    nome: 'Pizza do Zé',
+                    email: 'pizza@teste.com',
+                    senha: '123456',
+                    tipo: 'empresa',
+                    status: 'ativo',
+                    cnpj: '12.345.678/0001-90',
+                    telefone: '(88) 3611-1234',
+                    categoria: 'Pizzaria',
+                    endereco: 'Rua Coronel Mont\'Alverne, 500 - Centro',
+                    responsavel: 'José Silva',
+                    bairro: 'Centro',
+                    taxaEntrega: '5.00',
+                    tempoEntrega: '30-45 min'
+                }
+            ]);
+
+            const [consumidores, setConsumidores] = useStoredState('delivery_consumidores', [
+                {
+                    id: 'cons1',
+                    nome: 'Maria Silva',
+                    email: 'maria@teste.com',
+                    senha: '123456',
+                    telefone: '(88) 99999-5678',
+                    cpf: '987.654.321-00',
+                    endereco: 'Rua das Flores, 123',
+                    bairro: 'Centro',
+                    pontoReferencia: 'Próximo ao mercado',
+                    cadastradoEm: new Date().toLocaleString('pt-BR')
+                }
+            ]);
+
+            const [pedidos, setPedidos] = useStoredState('delivery_pedidos', [
+                {
+                    id: '1',
+                    cliente: 'Maria Silva',
+                    endereco: 'Rua das Flores, 123 - Centro',
+                    telefone: '(88) 99999-5678',
+                    valor: 45.90,
+                    status: 'disponivel',
+                    items: 'Pizza Margherita, Coca-Cola 2L',
+                    empresaId: 'emp1',
+                    empresaNome: 'Pizza do Zé',
+                    criadoEm: new Date().toLocaleString('pt-BR')
+                },
+                {
+                    id: '2',
+                    cliente: 'João Santos',
+                    endereco: 'Av. Dom José, 456 - Dom Expedito',
+                    telefone: '(88) 98888-1234',
+                    valor: 32.50,
+                    status: 'pronto',
+                    items: 'Pizza Calabresa, Guaraná',
+                    empresaId: 'emp1',
+                    empresaNome: 'Pizza do Zé',
+                    criadoEm: new Date().toLocaleString('pt-BR')
+                }
+            ]);
+
+            const admins = [
+                {
+                    id: 'admin1',
+                    nome: 'Administrador',
+                    email: 'admin',
+                    senha: 'tenderbr0',
+                    tipo: 'admin'
+                }
+            ];           
+ // Tela inicial com opções
+            const HomeScreen = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, 
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-6xl mb-4'
+                            }, '🚚'),
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Sistema Entrega Sobral'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Plataforma completa de delivery')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'options',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('button', {
+                                key: 'login',
+                                onClick: () => setCurrentView('login'),
+                                className: 'w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium'
+                            }, '🔑 Fazer Login'),
+                            
+                            React.createElement('div', {
+                                key: 'divider',
+                                className: 'text-center text-gray-500 text-sm'
+                            }, 'ou cadastre-se como:'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-empresa',
+                                onClick: () => setCurrentView('cadastro-empresa'),
+                                className: 'w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                            }, '🏢 Empresa/Restaurante'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-entregador',
+                                onClick: () => setCurrentView('cadastro-entregador'),
+                                className: 'w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 transition duration-200 font-medium'
+                            }, '🏍️ Entregador'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-consumidor',
+                                onClick: () => setCurrentView('cadastro-consumidor'),
+                                className: 'w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition duration-200 font-medium'
+                            }, '👤 Cliente/Consumidor'),
+
+                            React.createElement('div', {
+                                key: 'admin-link',
+                                className: 'mt-6 pt-4 border-t border-gray-200 text-center'
+                            }, [
+                                React.createElement('a', {
+                                    key: 'admin-access',
+                                    href: './admin-login.html',
+                                    className: 'text-xs text-gray-500 hover:text-gray-700 transition duration-200'
+                                }, '🔐 Acesso Administrativo')
+                            ])
+                        ])
+                    ])
+                );
+            };
+
+            // Componente de Login com Botões Específicos
+            const LoginForm = () => {
+                const [currentLoginType, setCurrentLoginType] = useState(null);
+                const [formData, setFormData] = useState({ 
+                    email: '', 
+                    senha: ''
+                });
+                const [error, setError] = useState('');
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    
+                    let user = null;
+
+                    if (currentLoginType === 'entregador') {
+                        user = users.find(u => u.email === formData.email && u.senha === formData.senha);
+                    } else if (currentLoginType === 'empresa') {
+                        user = empresas.find(u => u.email === formData.email && u.senha === formData.senha);
+                    } else if (currentLoginType === 'consumidor') {
+                        user = consumidores.find(u => u.email === formData.email && u.senha === formData.senha);
+                    }
+
+                    if (user) {
+                        if (user.status && user.status === 'pendente') {
+                            setError('Sua conta ainda está aguardando aprovação');
+                            return;
+                        }
+                        setCurrentUser(user);
+                        setCurrentView('dashboard');
+                        setError('');
+                    } else {
+                        setError('Email ou senha incorretos');
+                    }
+                };
+
+                const getUserTypeInfo = (type) => {
+                    const types = {
+                        consumidor: { icon: '👤', title: 'Cliente', color: 'purple', description: 'Faça pedidos e acompanhe entregas' },
+                        empresa: { icon: '🏢', title: 'Empresa', color: 'green', description: 'Gerencie seu restaurante e pedidos' },
+                        entregador: { icon: '🏍️', title: 'Entregador', color: 'orange', description: 'Aceite entregas e ganhe dinheiro' }
+                    };
+                    return types[type];
+                };
+
+                // Se nenhum tipo foi selecionado, mostrar botões de seleção
+                if (!currentLoginType) {
+                    return React.createElement('div', {
+                        className: 'min-h-screen flex items-center justify-center p-4'
+                    }, 
+                        React.createElement('div', {
+                            className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                        }, [
+                            React.createElement('div', {
+                                key: 'header',
+                                className: 'text-center mb-8'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'text-6xl mb-4'
+                                }, '🚚'),
+                                React.createElement('h1', {
+                                    key: 'title',
+                                    className: 'text-3xl font-bold text-gray-800 mb-2'
+                                }, 'Entrar no Sistema'),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-gray-600'
+                                }, 'Escolha seu tipo de acesso')
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'user-types',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'cliente-btn',
+                                    onClick: () => setCurrentLoginType('consumidor'),
+                                    className: 'w-full p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition duration-200 text-left'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'content',
+                                        className: 'flex items-center'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'icon',
+                                            className: 'text-3xl mr-4'
+                                        }, '👤'),
+                                        React.createElement('div', { key: 'text' }, [
+                                            React.createElement('h3', {
+                                                key: 'title',
+                                                className: 'text-lg font-semibold text-gray-800'
+                                            }, 'Sou Cliente'),
+                                            React.createElement('p', {
+                                                key: 'desc',
+                                                className: 'text-sm text-gray-600'
+                                            }, 'Faça pedidos e acompanhe entregas')
+                                        ])
+                                    ])
+                                ]),
+
+                                React.createElement('button', {
+                                    key: 'empresa-btn',
+                                    onClick: () => setCurrentLoginType('empresa'),
+                                    className: 'w-full p-4 border-2 border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition duration-200 text-left'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'content',
+                                        className: 'flex items-center'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'icon',
+                                            className: 'text-3xl mr-4'
+                                        }, '🏢'),
+                                        React.createElement('div', { key: 'text' }, [
+                                            React.createElement('h3', {
+                                                key: 'title',
+                                                className: 'text-lg font-semibold text-gray-800'
+                                            }, 'Sou Empresa'),
+                                            React.createElement('p', {
+                                                key: 'desc',
+                                                className: 'text-sm text-gray-600'
+                                            }, 'Gerencie seu restaurante e pedidos')
+                                        ])
+                                    ])
+                                ]),
+
+                                React.createElement('button', {
+                                    key: 'entregador-btn',
+                                    onClick: () => setCurrentLoginType('entregador'),
+                                    className: 'w-full p-4 border-2 border-orange-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition duration-200 text-left'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'content',
+                                        className: 'flex items-center'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'icon',
+                                            className: 'text-3xl mr-4'
+                                        }, '🏍️'),
+                                        React.createElement('div', { key: 'text' }, [
+                                            React.createElement('h3', {
+                                                key: 'title',
+                                                className: 'text-lg font-semibold text-gray-800'
+                                            }, 'Sou Entregador'),
+                                            React.createElement('p', {
+                                                key: 'desc',
+                                                className: 'text-sm text-gray-600'
+                                            }, 'Aceite entregas e ganhe dinheiro')
+                                        ])
+                                    ])
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'back-btn',
+                                className: 'mt-6'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    onClick: () => setCurrentView('home'),
+                                    className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
+                                }, 'Voltar ao Início')
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'site-info',
+                                className: 'mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200 text-sm text-center'
+                            }, [
+                                React.createElement('p', {
+                                    key: 'description',
+                                    className: 'text-gray-700'
+                                }, 'Conectando empresas, entregadores e clientes em Sobral-CE')
+                            ])
+                        ])
+                    );
+                }
+
+                // Formulário de login específico para o tipo selecionado
+                const typeInfo = getUserTypeInfo(currentLoginType);
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, 
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-6xl mb-4'
+                            }, typeInfo.icon),
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, `Login ${typeInfo.title}`),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, typeInfo.description)
+                        ]),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'email-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'email-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Email'),
+                                React.createElement('input', {
+                                    key: 'email-input',
+                                    type: 'email',
+                                    required: true,
+                                    value: formData.email,
+                                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                                    placeholder: 'seu@email.com'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'senha-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'senha-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Senha'),
+                                React.createElement('input', {
+                                    key: 'senha-input',
+                                    type: 'password',
+                                    required: true,
+                                    value: formData.senha,
+                                    onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                                    placeholder: 'Digite sua senha'
+                                })
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'p-3 bg-red-50 border border-red-200 rounded-md'
+                            }, [
+                                React.createElement('p', {
+                                    key: 'error-text',
+                                    className: 'text-red-700 text-sm font-medium'
+                                }, `❌ ${error}`)
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'buttons',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: `w-full py-3 px-4 rounded-md font-medium transition duration-200 ${
+                                        typeInfo.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500' :
+                                        typeInfo.color === 'green' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
+                                        'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500'
+                                    } text-white focus:outline-none focus:ring-2`
+                                }, `Entrar como ${typeInfo.title}`),
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    type: 'button',
+                                    onClick: () => {
+                                        setCurrentLoginType(null);
+                                        setFormData({ email: '', senha: '' });
+                                        setError('');
+                                    },
+                                    className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
+                                }, 'Voltar')
+                            ])
+                        ])
+                    ])
+                );
+            };
+
+            // Dashboard simples para demonstração
+            const SimpleDashboard = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, `Bem-vindo, ${currentUser.nome}! ${currentUser.tipo === 'empresa' ? '🏢' : currentUser.tipo === 'entregador' ? '🏍️' : currentUser.tipo === 'admin' ? '👨‍💼' : '👤'}`),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: () => {
+                                    setCurrentUser(null);
+                                    setCurrentView('home');
+                                },
+                                className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                            }, 'Sair')
+                        ])
+                    ]),
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'welcome',
+                            className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-xl font-bold text-gray-900 mb-2'
+                            }, '✅ Login realizado com sucesso!'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, `Logado como: ${currentUser.tipo} - ${currentUser.nome}`)
+                        ])
+                    ])
+                ]);
+            };
+
+            // Renderização principal
+            if (currentView === 'home') {
+                return React.createElement(HomeScreen);
+            } else if (currentView === 'login') {
+                return React.createElement(LoginForm);
+            } else if (currentView === 'dashboard') {
+                return React.createElement(SimpleDashboard);
+            }
+
+            return React.createElement('div', {
+                className: 'min-h-screen bg-gray-100 flex items-center justify-center'
+            }, React.createElement('p', {
+                className: 'text-gray-500'
+            }, 'Carregando...'));
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
