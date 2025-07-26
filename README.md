@@ -24,7 +24,7 @@ O **Sistema Entrega Sobral** é uma plataforma web completa para gerenciamento d
 
 ### Acesso Rápido
 1. Abra o arquivo `index.html` no navegador
-2. Ou acesse: [Sistema Entrega Sobral](https://seu-usuario.github.io/sistema-entrega-sobral)
+2. Ou acesse: [Sistema Entrega Sobral](https://seu-usuario.github.io/sistema-entrega-sobral2)
 
 ### Contas de Teste
 
@@ -104,7 +104,7 @@ sistema-entrega-sobral/
 1. Faça fork do repositório
 2. Vá em Settings > Pages
 3. Selecione a branch `main`
-4. Acesse via: `https://seu-usuario.github.io/sistema-entrega-sobral`
+4. Acesse via: `https://seu-usuario.github.io/sistema-entrega-sobral2`
 
 ### Servidor Local
 ```bash
