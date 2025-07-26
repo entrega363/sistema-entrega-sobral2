@@ -86,9 +86,11 @@ CREATE TABLE pagamentos (
     processado_em TIMESTAMP
 );
 
--- Inserir admin padrão
+-- Inserir admins padrão
 INSERT INTO admins (nome, email, senha, tipo, status) 
-VALUES ('Administrador', 'admin', 'tenderbr0', 'admin', 'ativo');
+VALUES 
+('Administrador', 'admin', 'tenderbr0', 'admin', 'ativo'),
+('Administrador Principal', 'entregasobral@gmail.com', 'tenderbr0', 'admin', 'ativo');
 
 -- Inserir dados de exemplo
 INSERT INTO users (nome, email, senha, telefone, cpf, veiculo, placa, status, total_entregas) 

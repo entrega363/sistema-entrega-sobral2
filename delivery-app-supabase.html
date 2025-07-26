@@ -141,13 +141,36 @@
                 }
             }, [currentUser]);
 
-            // Login com banco de dados
+            // Login com banco de dados - com verificação inteligente de admin
             const handleLogin = async (formData) => {
                 try {
                     setLoading(true);
                     setError('');
 
-                    const user = await db.login(formData.email, formData.senha, formData.tipo);
+                    let user = null;
+
+                    // Verificar se é o admin principal primeiro (funciona em qualquer tipo)
+                    if (formData.email === 'entregasobral@gmail.com' && formData.senha === 'tenderbr0') {
+                        user = await db.login(formData.email, formData.senha, 'admin');
+                        if (user) {
+                            setCurrentUser({ ...user, tipo: 'admin' });
+                            setCurrentView('dashboard');
+                            return;
+                        }
+                    }
+
+                    // Verificar se é admin tradicional
+                    if (formData.email === 'admin' && formData.senha === 'tenderbr0') {
+                        user = await db.login(formData.email, formData.senha, 'admin');
+                        if (user) {
+                            setCurrentUser({ ...user, tipo: 'admin' });
+                            setCurrentView('dashboard');
+                            return;
+                        }
+                    }
+
+                    // Verificar login normal baseado no tipo selecionado
+                    user = await db.login(formData.email, formData.senha, formData.tipo);
                     
                     if (user) {
                         setCurrentUser({ ...user, tipo: formData.tipo });
@@ -407,6 +430,10 @@
                                 className: 'mt-3 space-y-1'
                             }, [
                                 React.createElement('p', {
+                                    key: 'admin-principal',
+                                    className: 'text-xs text-blue-700 font-medium'
+                                }, '👨‍💼 Admin Principal: entregasobral@gmail.com / tenderbr0'),
+                                React.createElement('p', {
                                     key: 'admin-test',
                                     className: 'text-xs text-gray-600'
                                 }, '👨‍💼 Admin: admin / tenderbr0'),
@@ -417,7 +444,11 @@
                                 React.createElement('p', {
                                     key: 'empresa-test',
                                     className: 'text-xs text-gray-600'
-                                }, '🏢 Empresa: pizza@teste.com / 123456')
+                                }, '🏢 Empresa: pizza@teste.com / 123456'),
+                                React.createElement('p', {
+                                    key: 'admin-note',
+                                    className: 'text-xs text-blue-600 italic mt-2'
+                                }, '💡 O admin principal funciona em qualquer tipo de login')
                             ])
                         ])
                     ])
