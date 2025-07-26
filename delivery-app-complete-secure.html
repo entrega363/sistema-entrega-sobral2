@@ -2599,6 +2599,324 @@
                 ]);
             };
 
+            // Dashboard do Admin
+            const AdminDashboard = () => {
+                const [activeTab, setActiveTab] = useState('overview');
+                const empresasPendentes = empresas.filter(e => e.status === 'pendente');
+                const entregadoresPendentes = users.filter(u => u.status === 'pendente');
+
+                const aprovarEmpresa = (id) => {
+                    setEmpresas(empresas.map(e => 
+                        e.id === id ? { ...e, status: 'ativo', aprovadaEm: new Date().toLocaleString('pt-BR') } : e
+                    ));
+                };
+
+                const aprovarEntregador = (id) => {
+                    setUsers(users.map(u => 
+                        u.id === id ? { ...u, status: 'ativo', aprovadoEm: new Date().toLocaleString('pt-BR') } : u
+                    ));
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, 'Painel Administrativo 👨‍💼'),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: () => {
+                                    localStorage.removeItem('admin_authenticated');
+                                    localStorage.removeItem('admin_login_time');
+                                    setCurrentUser(null);
+                                    setCurrentView('home');
+                                    window.location.href = './';
+                                },
+                                className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                            }, 'Sair')
+                        ])
+                    ]),
+
+                    // Tabs
+                    React.createElement('div', {
+                        key: 'tabs',
+                        className: 'bg-white border-b'
+                    }, React.createElement('div', {
+                        className: 'max-w-6xl mx-auto'
+                    }, React.createElement('nav', {
+                        className: 'flex space-x-8'
+                    }, [
+                        React.createElement('button', {
+                            key: 'overview-tab',
+                            onClick: () => setActiveTab('overview'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'overview'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`
+                        }, '📊 Visão Geral'),
+                        React.createElement('button', {
+                            key: 'aprovacoes-tab',
+                            onClick: () => setActiveTab('aprovacoes'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'aprovacoes'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`
+                        }, `✅ Aprovações (${empresasPendentes.length + entregadoresPendentes.length})`)
+                    ]))),
+
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        // Overview
+                        activeTab === 'overview' && React.createElement('div', {
+                            key: 'overview-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'stats',
+                                className: 'grid gap-6 md:grid-cols-4'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'empresas',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '🏢'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, empresas.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Empresas')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'entregadores',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '🏍️'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, users.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Entregadores')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'consumidores',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '👤'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, consumidores.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Clientes')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'pedidos',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '📦'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, pedidos.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Pedidos')
+                                ])
+                            ]),
+                            React.createElement('div', {
+                                key: 'message',
+                                className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                            }, [
+                                React.createElement('h2', {
+                                    key: 'title',
+                                    className: 'text-xl font-bold text-gray-900 mb-2'
+                                }, '✅ Sistema funcionando corretamente!'),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-gray-600'
+                                }, 'Logado como: Administrador'),
+                                React.createElement('p', {
+                                    key: 'timestamp',
+                                    className: 'text-sm text-gray-500 mt-2'
+                                }, `Login realizado em: ${localStorage.getItem('admin_login_time') ? new Date(localStorage.getItem('admin_login_time')).toLocaleString('pt-BR') : 'N/A'}`)
+                            ])
+                        ]),
+
+                        // Aprovações
+                        activeTab === 'aprovacoes' && React.createElement('div', {
+                            key: 'aprovacoes-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Aprovações Pendentes'),
+
+                            // Empresas pendentes
+                            empresasPendentes.length > 0 && React.createElement('div', {
+                                key: 'empresas-pendentes',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'subtitle',
+                                    className: 'text-lg font-semibold text-gray-800'
+                                }, `🏢 Empresas (${empresasPendentes.length})`),
+                                React.createElement('div', {
+                                    key: 'list',
+                                    className: 'grid gap-4 md:grid-cols-2'
+                                }, empresasPendentes.map(empresa => 
+                                    React.createElement('div', {
+                                        key: empresa.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border border-yellow-200'
+                                    }, [
+                                        React.createElement('h4', {
+                                            key: 'nome',
+                                            className: 'font-semibold text-lg text-gray-900 mb-2'
+                                        }, empresa.nome),
+                                        React.createElement('p', {
+                                            key: 'categoria',
+                                            className: 'text-sm text-gray-600 mb-1'
+                                        }, `Categoria: ${empresa.categoria}`),
+                                        React.createElement('p', {
+                                            key: 'responsavel',
+                                            className: 'text-sm text-gray-600 mb-1'
+                                        }, `Responsável: ${empresa.responsavel}`),
+                                        React.createElement('p', {
+                                            key: 'email',
+                                            className: 'text-sm text-gray-600 mb-4'
+                                        }, `Email: ${empresa.email}`),
+                                        React.createElement('div', {
+                                            key: 'actions',
+                                            className: 'flex space-x-2'
+                                        }, [
+                                            React.createElement('button', {
+                                                key: 'aprovar',
+                                                onClick: () => aprovarEmpresa(empresa.id),
+                                                className: 'flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200 text-sm'
+                                            }, 'Aprovar'),
+                                            React.createElement('button', {
+                                                key: 'rejeitar',
+                                                onClick: () => {
+                                                    if (confirm('Tem certeza que deseja rejeitar esta empresa?')) {
+                                                        setEmpresas(empresas.filter(e => e.id !== empresa.id));
+                                                    }
+                                                },
+                                                className: 'flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition duration-200 text-sm'
+                                            }, 'Rejeitar')
+                                        ])
+                                    ])
+                                ))
+                            ]),
+
+                            // Entregadores pendentes
+                            entregadoresPendentes.length > 0 && React.createElement('div', {
+                                key: 'entregadores-pendentes',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'subtitle',
+                                    className: 'text-lg font-semibold text-gray-800'
+                                }, `🏍️ Entregadores (${entregadoresPendentes.length})`),
+                                React.createElement('div', {
+                                    key: 'list',
+                                    className: 'grid gap-4 md:grid-cols-2'
+                                }, entregadoresPendentes.map(entregador => 
+                                    React.createElement('div', {
+                                        key: entregador.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border border-yellow-200'
+                                    }, [
+                                        React.createElement('h4', {
+                                            key: 'nome',
+                                            className: 'font-semibold text-lg text-gray-900 mb-2'
+                                        }, entregador.nome),
+                                        React.createElement('p', {
+                                            key: 'veiculo',
+                                            className: 'text-sm text-gray-600 mb-1'
+                                        }, `Veículo: ${entregador.veiculo}`),
+                                        React.createElement('p', {
+                                            key: 'placa',
+                                            className: 'text-sm text-gray-600 mb-1'
+                                        }, `Placa: ${entregador.placa}`),
+                                        React.createElement('p', {
+                                            key: 'email',
+                                            className: 'text-sm text-gray-600 mb-4'
+                                        }, `Email: ${entregador.email}`),
+                                        React.createElement('div', {
+                                            key: 'actions',
+                                            className: 'flex space-x-2'
+                                        }, [
+                                            React.createElement('button', {
+                                                key: 'aprovar',
+                                                onClick: () => aprovarEntregador(entregador.id),
+                                                className: 'flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200 text-sm'
+                                            }, 'Aprovar'),
+                                            React.createElement('button', {
+                                                key: 'rejeitar',
+                                                onClick: () => {
+                                                    if (confirm('Tem certeza que deseja rejeitar este entregador?')) {
+                                                        setUsers(users.filter(u => u.id !== entregador.id));
+                                                    }
+                                                },
+                                                className: 'flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition duration-200 text-sm'
+                                            }, 'Rejeitar')
+                                        ])
+                                    ])
+                                ))
+                            ]),
+
+                            // Mensagem quando não há aprovações pendentes
+                            empresasPendentes.length === 0 && entregadoresPendentes.length === 0 && React.createElement('div', {
+                                key: 'no-pending',
+                                className: 'text-center py-12'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'text-6xl mb-4'
+                                }, '✅'),
+                                React.createElement('p', {
+                                    key: 'message',
+                                    className: 'text-gray-500 text-lg'
+                                }, 'Nenhuma aprovação pendente')
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+
             // Renderização principal
             if (currentView === 'home') {
                 return React.createElement(HomeScreen);
@@ -2615,6 +2933,8 @@
                     return React.createElement(EmpresaDashboard);
                 } else if (currentUser.tipo === 'entregador') {
                     return React.createElement(EntregadorDashboard);
+                } else if (currentUser.tipo === 'admin') {
+                    return React.createElement(AdminDashboard);
                 } else {
                     return React.createElement(ConsumidorDashboard);
                 }
