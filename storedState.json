@@ -1,0 +1,97 @@
+{
+  "active_tab": "dashboard",
+  "empresa_logada": null,
+  "pedidos_sobral": [
+    {
+      "id": "1",
+      "cliente": "Maria Silva",
+      "endereco": "Rua das Flores, 123 - Centro",
+      "telefone": "(88) 99999-5678",
+      "valor": 45.90,
+      "status": "disponivel",
+      "items": "Pizza Margherita, Coca-Cola 2L",
+      "empresaId": "emp1",
+      "empresaNome": "Pizza do Zé",
+      "criadoEm": "26/07/2025, 10:30:00"
+    },
+    {
+      "id": "2",
+      "cliente": "João Santos",
+      "endereco": "Av. Dom José, 456 - Dom Expedito",
+      "telefone": "(88) 98888-1234",
+      "valor": 32.50,
+      "status": "aceito",
+      "items": "Pizza Calabresa, Guaraná",
+      "empresaId": "emp1",
+      "empresaNome": "Pizza do Zé",
+      "entregadorId": "user1",
+      "criadoEm": "26/07/2025, 11:15:00"
+    }
+  ],
+  "empresas_sobral": [
+    {
+      "id": "emp1",
+      "nome": "Pizza do Zé",
+      "email": "pizza@teste.com",
+      "senha": "123456",
+      "tipo": "empresa",
+      "status": "ativo",
+      "cnpj": "12.345.678/0001-90",
+      "telefone": "(88) 3611-1234",
+      "categoria": "Pizzaria",
+      "endereco": "Rua Coronel Mont'Alverne, 500 - Centro"
+    }
+  ],
+  "produtos_sobral": [
+    {
+      "id": "prod1",
+      "nome": "Pizza Margherita",
+      "preco": "35.90",
+      "categoria": "Pizzas",
+      "descricao": "Pizza tradicional com molho de tomate, mussarela e manjericão",
+      "empresaId": "emp1",
+      "disponivel": true,
+      "tempoPreparacao": "30",
+      "criadoEm": "26/07/2025, 08:00:00"
+    },
+    {
+      "id": "prod2",
+      "nome": "Pizza Calabresa",
+      "preco": "32.50",
+      "categoria": "Pizzas",
+      "descricao": "Pizza com calabresa, cebola e mussarela",
+      "empresaId": "emp1",
+      "disponivel": true,
+      "tempoPreparacao": "30",
+      "criadoEm": "26/07/2025, 08:00:00"
+    }
+  ],
+  "entregadores_sobral": [
+    {
+      "id": "user1",
+      "nome": "João Entregador",
+      "email": "joao@teste.com",
+      "senha": "123456",
+      "tipo": "entregador",
+      "status": "ativo",
+      "telefone": "(88) 99999-1234",
+      "cpf": "123.456.789-00",
+      "veiculo": "Moto Honda CG 160",
+      "placa": "ABC-1234",
+      "disponivel": true,
+      "totalEntregas": 15
+    }
+  ],
+  "consumidores_sobral": [
+    {
+      "id": "cons1",
+      "nome": "Maria Silva",
+      "email": "maria@teste.com",
+      "senha": "123456",
+      "telefone": "(88) 99999-5678",
+      "endereco": "Rua das Flores, 123",
+      "bairro": "Centro",
+      "cadastradoEm": "26/07/2025, 09:00:00"
+    }
+  ]
+}
