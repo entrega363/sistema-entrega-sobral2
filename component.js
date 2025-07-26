@@ -2703,3 +2703,6 @@ var stdin_default = SistemaEntregaSobral;
 export {
   stdin_default as default
 };
+
+// Export the component as default
+export default SistemaEntregaSobral;
