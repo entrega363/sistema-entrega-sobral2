@@ -127,6 +127,45 @@
                     empresaNome: 'Pizza do Zé',
                     entregadorId: 'user1',
                     criadoEm: new Date().toLocaleString('pt-BR')
+                },
+                {
+                    id: '3',
+                    cliente: 'Ana Costa',
+                    endereco: 'Rua Travessa da Sé, 789 - Centro',
+                    telefone: '(88) 97777-9999',
+                    valor: 28.75,
+                    status: 'entregue',
+                    items: 'X-Burger, Batata Frita, Refrigerante',
+                    empresaId: 'emp2',
+                    empresaNome: 'Lanchonete do João',
+                    entregadorId: 'user1',
+                    criadoEm: new Date(Date.now() - 3600000).toLocaleString('pt-BR'),
+                    entregueEm: new Date().toLocaleString('pt-BR')
+                },
+                {
+                    id: '4',
+                    cliente: 'Carlos Oliveira',
+                    endereco: 'Av. Lúcia Frota, 321 - Sinhá Sabóia',
+                    telefone: '(88) 96666-8888',
+                    valor: 52.30,
+                    status: 'disponivel',
+                    items: 'Pizza Família, Refrigerante 2L, Sobremesa',
+                    empresaId: 'emp1',
+                    empresaNome: 'Pizza do Zé',
+                    criadoEm: new Date(Date.now() - 1800000).toLocaleString('pt-BR')
+                },
+                {
+                    id: '5',
+                    cliente: 'Francisca Lima',
+                    endereco: 'Rua Padre Ibiapina, 567 - Junco',
+                    telefone: '(88) 95555-7777',
+                    valor: 38.40,
+                    status: 'aceito',
+                    items: 'Hambúrguer Especial, Batata, Suco',
+                    empresaId: 'emp2',
+                    empresaNome: 'Lanchonete do João',
+                    entregadorId: 'user1',
+                    criadoEm: new Date(Date.now() - 900000).toLocaleString('pt-BR')
                 }
             ]);
 
@@ -273,15 +312,65 @@
 
                         React.createElement('div', {
                             key: 'test-info',
-                            className: 'mt-6 p-4 bg-gray-50 rounded-md text-sm text-gray-600'
+                            className: 'mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200 text-sm'
                         }, [
-                            React.createElement('p', {
-                                key: 'test-title',
-                                className: 'font-semibold mb-2'
-                            }, 'Contas de teste:'),
-                            React.createElement('p', { key: 'admin-test' }, 'Admin: admin / tenderbr0'),
-                            React.createElement('p', { key: 'entregador-test' }, 'Entregador: joao@teste.com / 123456'),
-                            React.createElement('p', { key: 'empresa-test' }, 'Empresa: pizza@teste.com / 123456')
+                            React.createElement('div', {
+                                key: 'header',
+                                className: 'flex items-center mb-3'
+                            }, [
+                                React.createElement('span', {
+                                    key: 'icon',
+                                    className: 'text-lg mr-2'
+                                }, '🔑'),
+                                React.createElement('p', {
+                                    key: 'test-title',
+                                    className: 'font-semibold text-blue-800'
+                                }, 'Contas de teste disponíveis:')
+                            ]),
+                            React.createElement('div', {
+                                key: 'accounts',
+                                className: 'space-y-2'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'admin',
+                                    className: 'flex items-center justify-between bg-white p-2 rounded border'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'label',
+                                        className: 'font-medium text-gray-700'
+                                    }, '👨‍💼 Admin:'),
+                                    React.createElement('span', {
+                                        key: 'creds',
+                                        className: 'text-blue-600 font-mono text-xs'
+                                    }, 'admin / tenderbr0')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'entregador',
+                                    className: 'flex items-center justify-between bg-white p-2 rounded border'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'label',
+                                        className: 'font-medium text-gray-700'
+                                    }, '🏍️ Entregador:'),
+                                    React.createElement('span', {
+                                        key: 'creds',
+                                        className: 'text-blue-600 font-mono text-xs'
+                                    }, 'joao@teste.com / 123456')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'empresa',
+                                    className: 'flex items-center justify-between bg-white p-2 rounded border'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'label',
+                                        className: 'font-medium text-gray-700'
+                                    }, '🏢 Empresa:'),
+                                    React.createElement('span', {
+                                        key: 'creds',
+                                        className: 'text-blue-600 font-mono text-xs'
+                                    }, 'pizza@teste.com / 123456')
+                                ])
+                            ])
                         ])
                     ])
                 );
