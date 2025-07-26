@@ -41,22 +41,7 @@ if ($gitStatus) {
     Write-Host "📝 Mudanças detectadas. Fazendo commit..." -ForegroundColor Yellow
     
     git add .
-    git commit -m "🚀 Deploy: Configuração Vercel + arquivos de deploy
-
-✨ Arquivos adicionados:
-- vercel.json (configuração principal)
-- package.json (metadados do projeto)
-- deploy-vercel.md (documentação)
-- _headers (headers de segurança)
-- netlify.toml (compatibilidade)
-
-🔧 Configurações:
-- Rotas personalizadas (/v1, /v2, /v3, /v4, /pwa)
-- Headers de segurança para PWA
-- Cache otimizado
-- Deploy automático configurado
-
-Pronto para deploy no Vercel! 🚀"
+    git commit -m "Deploy: Configuração Vercel + arquivos de deploy - Arquivos adicionados e configurações prontas para deploy no Vercel"
     
     Write-Host "📤 Enviando para GitHub..." -ForegroundColor Yellow
     git push origin main

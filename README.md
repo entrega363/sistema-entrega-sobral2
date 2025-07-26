@@ -4,8 +4,17 @@ Sistema completo de delivery para a cidade de Sobral-CE, desenvolvido com React 
 
 ## 🚀 Versões Disponíveis
 
+### 🏢 v5.0 Enterprise - `delivery-app-enhanced-v5.html`
+**🚀 VERSÃO ENTERPRISE - SISTEMA COMPLETO**
+- ✅ **WhatsApp Business** - Integração completa com templates
+- ✅ **GPS Tracking** - Rastreamento em tempo real
+- ✅ **Relatórios PDF** - Financeiro, performance, analytics
+- ✅ **Firebase Integration** - Banco de dados em nuvem
+- ✅ **Business Intelligence** - Métricas avançadas
+- ✅ **Real-time Dashboard** - Dados ao vivo
+
 ### 📱 v4.0 PWA Premium - `delivery-app-enhanced-v4.html`
-**🏆 VERSÃO MAIS AVANÇADA - PWA COMPLETO**
+**🏆 PWA COMPLETO COM PAGAMENTOS**
 - ✅ **Progressive Web App** - Instala como app nativo
 - ✅ **Pagamentos Online** - PIX (QR Code), Cartão, Dinheiro
 - ✅ **Sistema de Cupons** - BEMVINDO10, FRETE5
@@ -38,18 +47,23 @@ Sistema completo de delivery para a cidade de Sobral-CE, desenvolvido com React 
 
 ## 🎯 Funcionalidades por Versão
 
-| Funcionalidade | v1.0 | v2.0 | v3.0 | v4.0 |
-|---|---|---|---|---|
-| Multi-usuário | ✅ | ✅ | ✅ | ✅ |
-| Dashboards | ✅ | ✅ | ✅ | ✅ |
-| Notificações | ❌ | ✅ | ✅ | ✅ |
-| Chat | ❌ | ❌ | ✅ | ✅ |
-| Mapas | ❌ | ❌ | ✅ | ✅ |
-| Relatórios | ❌ | ❌ | ✅ | ✅ |
-| Pagamentos | ❌ | ❌ | ❌ | ✅ |
-| PWA | ❌ | ❌ | ❌ | ✅ |
-| Cupons | ❌ | ❌ | ❌ | ✅ |
-| Offline | ❌ | ❌ | ❌ | ✅ |
+| Funcionalidade | v1.0 | v2.0 | v3.0 | v4.0 | v5.0 |
+|---|---|---|---|---|---|
+| Multi-usuário | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Dashboards | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Notificações | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Chat | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Mapas | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Relatórios | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Pagamentos | ❌ | ❌ | ❌ | ✅ | ✅ |
+| PWA | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Cupons | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Offline | ❌ | ❌ | ❌ | ✅ | ✅ |
+| WhatsApp Business | ❌ | ❌ | ❌ | ❌ | ✅ |
+| GPS Tracking | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Relatórios PDF | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Firebase | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Business Intelligence | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 ## 🔑 Credenciais de Teste
 
@@ -107,6 +121,14 @@ Sistema completo de delivery para a cidade de Sobral-CE, desenvolvido com React 
 - **Stripe.js** - Pagamentos online
 - **QRCode.js** - Geração de PIX
 - **Push Notifications** - Notificações reais
+
+### v5.0 Enterprise
+- **Firebase SDK** - Banco de dados em nuvem
+- **Socket.IO** - Comunicação em tempo real
+- **jsPDF** - Geração de relatórios PDF
+- **WhatsApp Business API** - Integração completa
+- **GPS Geolocation** - Rastreamento em tempo real
+- **Advanced Analytics** - Business Intelligence
 
 ## 🚀 Como Usar
 
