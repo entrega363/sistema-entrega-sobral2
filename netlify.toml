@@ -1,7 +1,56 @@
 [build]
   publish = "."
+  command = "echo 'Static site - no build needed'"
 
 [[redirects]]
-  from = "/*"
-  to = "/delivery-app.html"
+  from = "/"
+  to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin-login.html"
+  status = 200
+
+[[redirects]]
+  from = "/app"
+  to = "/delivery-app-complete.html"
+  status = 200
+
+[[redirects]]
+  from = "/v1"
+  to = "/delivery-app-enhanced-v1.html"
+  status = 200
+
+[[redirects]]
+  from = "/v2"
+  to = "/delivery-app-enhanced-v2.html"
+  status = 200
+
+[[redirects]]
+  from = "/v3"
+  to = "/delivery-app-enhanced-v3.html"
+  status = 200
+
+[[redirects]]
+  from = "/v4"
+  to = "/delivery-app-enhanced-v4.html"
+  status = 200
+
+[[redirects]]
+  from = "/pwa"
+  to = "/delivery-app-enhanced-v4.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+
+[[headers]]
+  for = "/delivery-app-enhanced-v4.html"
+  [headers.values]
+    Service-Worker-Allowed = "/"
+    Cache-Control = "public, max-age=0, must-revalidate"

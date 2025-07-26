@@ -1,8 +1,93 @@
 {
-  "rewrites": [
+  "version": 2,
+  "name": "sistema-entrega-sobral",
+  "builds": [
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.sql",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/admin",
+      "dest": "/admin-login.html"
+    },
+    {
+      "src": "/app",
+      "dest": "/delivery-app-complete.html"
+    },
+    {
+      "src": "/v1",
+      "dest": "/delivery-app-enhanced-v1.html"
+    },
+    {
+      "src": "/v2",
+      "dest": "/delivery-app-enhanced-v2.html"
+    },
+    {
+      "src": "/v3",
+      "dest": "/delivery-app-enhanced-v3.html"
+    },
+    {
+      "src": "/v4",
+      "dest": "/delivery-app-enhanced-v4.html"
+    },
+    {
+      "src": "/pwa",
+      "dest": "/delivery-app-enhanced-v4.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/delivery-app-enhanced-v4.html",
+      "headers": [
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
-      "destination": "/delivery-app.html"
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
     }
-  ]
+  ],
+  "functions": {
+    "*.html": {
+      "maxDuration": 10
+    }
+  }
 }

@@ -1,0 +1,34 @@
+{
+  "name": "sistema-entrega-sobral",
+  "version": "4.0.0",
+  "description": "Sistema completo de delivery para Sobral-CE com PWA, pagamentos online e funcionalidades premium",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site - no build needed'",
+    "start": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "delivery",
+    "sobral",
+    "pwa",
+    "react",
+    "pagamentos",
+    "food-delivery",
+    "brasil"
+  ],
+  "author": "Sistema Entrega Sobral",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/entrega363/sistema-entrega-sobral2.git"
+  },
+  "homepage": "https://sistema-entrega-sobral.vercel.app",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}
