@@ -1866,6 +1866,362 @@
                 ]);
             };
 
+            // Dashboard do Entregador
+            const EntregadorDashboard = () => {
+                const [activeTab, setActiveTab] = useState('pedidos');
+                const [statusDisponivel, setStatusDisponivel] = useState(true);
+
+                // Pedidos disponíveis para entrega
+                const pedidosDisponiveis = pedidos.filter(p => p.status === 'pronto' && !p.entregadorId);
+                const meusPedidos = pedidos.filter(p => p.entregadorId === currentUser.id);
+                const pedidosEmAndamento = meusPedidos.filter(p => p.status === 'saiu_entrega');
+
+                const aceitarPedido = (pedidoId) => {
+                    const pedidosAtualizados = pedidos.map(p => 
+                        p.id === pedidoId 
+                            ? { ...p, entregadorId: currentUser.id, entregadorNome: currentUser.nome, status: 'saiu_entrega' }
+                            : p
+                    );
+                    setPedidos(pedidosAtualizados);
+                    
+                    addNotification(
+                        `🚚 Pedido #${pedidoId.slice(-4)} aceito! Dirija-se ao local de retirada.`,
+                        'success',
+                        currentUser.id
+                    );
+                };
+
+                const finalizarEntrega = (pedidoId) => {
+                    const pedidosAtualizados = pedidos.map(p => 
+                        p.id === pedidoId 
+                            ? { ...p, status: 'entregue', entregueEm: new Date().toLocaleString('pt-BR') }
+                            : p
+                    );
+                    setPedidos(pedidosAtualizados);
+                    
+                    addNotification(
+                        `✅ Entrega #${pedidoId.slice(-4)} finalizada com sucesso!`,
+                        'success',
+                        currentUser.id
+                    );
+                };
+
+                return React.createElement('div', {
+                    className: 'max-w-7xl mx-auto p-6'
+                }, [
+                    // Header do entregador
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white p-6 rounded-lg shadow-md mb-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center'
+                        }, [
+                            React.createElement('div', {
+                                key: 'info'
+                            }, [
+                                React.createElement('h1', {
+                                    key: 'title',
+                                    className: 'text-2xl font-bold text-gray-800'
+                                }, `🏍️ Dashboard do Entregador`),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-gray-600 mt-1'
+                                }, `${currentUser.nome} - ${statusDisponivel ? 'Disponível' : 'Indisponível'}`)
+                            ]),
+                            React.createElement('div', {
+                                key: 'status-toggle',
+                                className: 'flex items-center space-x-3'
+                            }, [
+                                React.createElement('span', {
+                                    key: 'status-label',
+                                    className: 'text-sm font-medium text-gray-700'
+                                }, 'Status:'),
+                                React.createElement('button', {
+                                    key: 'toggle-btn',
+                                    onClick: () => setStatusDisponivel(!statusDisponivel),
+                                    className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
+                                        statusDisponivel 
+                                            ? 'bg-green-600 text-white hover:bg-green-700' 
+                                            : 'bg-red-600 text-white hover:bg-red-700'
+                                    }`
+                                }, statusDisponivel ? '✅ Disponível' : '❌ Indisponível')
+                            ])
+                        ])
+                    ]),
+
+                    // Estatísticas rápidas
+                    React.createElement('div', {
+                        key: 'stats',
+                        className: 'grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'disponiveis-card',
+                            className: 'bg-gradient-to-r from-blue-400 to-blue-600 p-6 rounded-lg shadow-md text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-3xl mb-2'
+                            }, '📦'),
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold'
+                            }, 'Pedidos Disponíveis'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-2xl font-bold'
+                            }, pedidosDisponiveis.length)
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'andamento-card',
+                            className: 'bg-gradient-to-r from-orange-400 to-orange-600 p-6 rounded-lg shadow-md text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-3xl mb-2'
+                            }, '🚚'),
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold'
+                            }, 'Em Andamento'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-2xl font-bold'
+                            }, pedidosEmAndamento.length)
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'completos-card',
+                            className: 'bg-gradient-to-r from-green-400 to-green-600 p-6 rounded-lg shadow-md text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-3xl mb-2'
+                            }, '✅'),
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold'
+                            }, 'Entregas Completas'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-2xl font-bold'
+                            }, meusPedidos.filter(p => p.status === 'entregue').length)
+                        ])
+                    ]),
+
+                    // Tabs de navegação
+                    React.createElement('div', {
+                        key: 'tabs',
+                        className: 'bg-white border-b border-gray-200 rounded-t-lg'
+                    }, [
+                        React.createElement('div', {
+                            key: 'tab-list',
+                            className: 'flex space-x-8 px-6'
+                        }, [
+                            React.createElement('button', {
+                                key: 'pedidos-tab',
+                                onClick: () => setActiveTab('pedidos'),
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'pedidos' 
+                                        ? 'border-orange-500 text-orange-600' 
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                            }, `📦 Pedidos Disponíveis (${pedidosDisponiveis.length})`),
+                            React.createElement('button', {
+                                key: 'minhas-tab',
+                                onClick: () => setActiveTab('minhas'),
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'minhas' 
+                                        ? 'border-orange-500 text-orange-600' 
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                            }, `🚚 Minhas Entregas (${meusPedidos.length})`)
+                        ])
+                    ]),
+
+                    // Conteúdo das tabs
+                    React.createElement('div', {
+                        key: 'tab-content',
+                        className: 'bg-white rounded-b-lg shadow-md p-6'
+                    }, [
+                        // Tab Pedidos Disponíveis
+                        activeTab === 'pedidos' && React.createElement('div', {
+                            key: 'pedidos-content',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-xl font-semibold text-gray-800 mb-4'
+                            }, '📦 Pedidos Disponíveis para Entrega'),
+                            
+                            pedidosDisponiveis.length === 0 ? 
+                                React.createElement('div', {
+                                    key: 'empty',
+                                    className: 'text-center py-8'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-6xl mb-4'
+                                    }, '📭'),
+                                    React.createElement('p', {
+                                        key: 'message',
+                                        className: 'text-gray-600'
+                                    }, 'Nenhum pedido disponível no momento')
+                                ]) :
+                                React.createElement('div', {
+                                    key: 'pedidos-list',
+                                    className: 'space-y-4'
+                                }, pedidosDisponiveis.map(pedido => 
+                                    React.createElement('div', {
+                                        key: pedido.id,
+                                        className: 'border border-gray-200 rounded-lg p-4 hover:shadow-md transition duration-200'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'header',
+                                            className: 'flex justify-between items-start mb-3'
+                                        }, [
+                                            React.createElement('div', {
+                                                key: 'info'
+                                            }, [
+                                                React.createElement('h3', {
+                                                    key: 'id',
+                                                    className: 'font-semibold text-gray-800'
+                                                }, `Pedido #${pedido.id.slice(-4)}`),
+                                                React.createElement('p', {
+                                                    key: 'empresa',
+                                                    className: 'text-sm text-gray-600'
+                                                }, `${pedido.empresaNome} → ${pedido.cliente}`),
+                                                React.createElement('p', {
+                                                    key: 'endereco',
+                                                    className: 'text-sm text-gray-500'
+                                                }, pedido.endereco)
+                                            ]),
+                                            React.createElement('div', {
+                                                key: 'valor',
+                                                className: 'text-right'
+                                            }, [
+                                                React.createElement('p', {
+                                                    key: 'price',
+                                                    className: 'text-xl font-bold text-green-600'
+                                                }, `R$ ${pedido.valor.toFixed(2)}`),
+                                                React.createElement('p', {
+                                                    key: 'time',
+                                                    className: 'text-xs text-gray-500'
+                                                }, pedido.criadoEm)
+                                            ])
+                                        ]),
+                                        React.createElement('div', {
+                                            key: 'items',
+                                            className: 'mb-3'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'items-label',
+                                                className: 'text-sm font-medium text-gray-700'
+                                            }, 'Itens:'),
+                                            React.createElement('p', {
+                                                key: 'items-list',
+                                                className: 'text-sm text-gray-600'
+                                            }, pedido.items)
+                                        ]),
+                                        React.createElement('button', {
+                                            key: 'accept-btn',
+                                            onClick: () => aceitarPedido(pedido.id),
+                                            disabled: !statusDisponivel,
+                                            className: `w-full py-2 px-4 rounded-md font-medium transition duration-200 ${
+                                                statusDisponivel 
+                                                    ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`
+                                        }, statusDisponivel ? '🚚 Aceitar Entrega' : '❌ Indisponível')
+                                    ])
+                                ))
+                        ]),
+
+                        // Tab Minhas Entregas
+                        activeTab === 'minhas' && React.createElement('div', {
+                            key: 'minhas-content',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-xl font-semibold text-gray-800 mb-4'
+                            }, '🚚 Minhas Entregas'),
+                            
+                            meusPedidos.length === 0 ? 
+                                React.createElement('div', {
+                                    key: 'empty',
+                                    className: 'text-center py-8'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-6xl mb-4'
+                                    }, '📋'),
+                                    React.createElement('p', {
+                                        key: 'message',
+                                        className: 'text-gray-600'
+                                    }, 'Você ainda não tem entregas')
+                                ]) :
+                                React.createElement('div', {
+                                    key: 'entregas-list',
+                                    className: 'space-y-4'
+                                }, meusPedidos.map(pedido => 
+                                    React.createElement('div', {
+                                        key: pedido.id,
+                                        className: 'border border-gray-200 rounded-lg p-4'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'header',
+                                            className: 'flex justify-between items-start mb-3'
+                                        }, [
+                                            React.createElement('div', {
+                                                key: 'info'
+                                            }, [
+                                                React.createElement('h3', {
+                                                    key: 'id',
+                                                    className: 'font-semibold text-gray-800'
+                                                }, `Pedido #${pedido.id.slice(-4)}`),
+                                                React.createElement('p', {
+                                                    key: 'cliente',
+                                                    className: 'text-sm text-gray-600'
+                                                }, `Cliente: ${pedido.cliente}`),
+                                                React.createElement('p', {
+                                                    key: 'endereco',
+                                                    className: 'text-sm text-gray-500'
+                                                }, pedido.endereco)
+                                            ]),
+                                            React.createElement('div', {
+                                                key: 'status-valor',
+                                                className: 'text-right'
+                                            }, [
+                                                React.createElement('span', {
+                                                    key: 'status',
+                                                    className: `px-3 py-1 rounded-full text-sm font-medium ${
+                                                        pedido.status === 'saiu_entrega' ? 'bg-orange-100 text-orange-800' :
+                                                        pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`
+                                                }, pedido.status === 'saiu_entrega' ? 'EM TRÂNSITO' : 
+                                                   pedido.status === 'entregue' ? 'ENTREGUE' : pedido.status.toUpperCase()),
+                                                React.createElement('p', {
+                                                    key: 'valor',
+                                                    className: 'text-lg font-bold text-green-600 mt-1'
+                                                }, `R$ ${pedido.valor.toFixed(2)}`)
+                                            ])
+                                        ]),
+                                        pedido.status === 'saiu_entrega' && React.createElement('button', {
+                                            key: 'finalizar-btn',
+                                            onClick: () => finalizarEntrega(pedido.id),
+                                            className: 'w-full mt-3 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                                        }, '✅ Finalizar Entrega')
+                                    ])
+                                ))
+                        ])
+                    ])
+                ]);
+            };
+
             // Dashboard simples para outros tipos de usuário
             const SimpleDashboard = () => {
                 return React.createElement('div', {
@@ -2355,6 +2711,7 @@
                     }, [
                         currentUser.tipo === 'consumidor' ? React.createElement(ConsumidorDashboard) :
                         currentUser.tipo === 'empresa' ? React.createElement(EmpresaDashboard) :
+                        currentUser.tipo === 'entregador' ? React.createElement(EntregadorDashboard) :
                         React.createElement(SimpleDashboard)
                     ])
                 ]);
