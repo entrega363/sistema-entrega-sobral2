@@ -512,7 +512,18 @@
             const LoginForm = () => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const accessType = urlParams.get('access');
-                const [currentLoginType, setCurrentLoginType] = useState(accessType || null);
+                
+                // Mapear tipos da URL para tipos internos
+                const mapAccessType = (type) => {
+                    const mapping = {
+                        'cliente': 'consumidor',
+                        'empresa': 'empresa',
+                        'entregador': 'entregador'
+                    };
+                    return mapping[type] || type;
+                };
+                
+                const [currentLoginType, setCurrentLoginType] = useState(mapAccessType(accessType) || null);
                 const [formData, setFormData] = useState({ 
                     email: '', 
                     senha: ''
