@@ -2801,19 +2801,17 @@
                                     onClick: () => {
                                         const userType = currentUser.tipo;
                                         setCurrentUser(null);
-                                        
-                                        // Redirecionar para link seguro baseado no tipo de usuário
-                                        if (userType === 'consumidor') {
-                                            window.location.href = window.location.origin + window.location.pathname + '?access=cliente';
-                                        } else if (userType === 'empresa') {
-                                            window.location.href = window.location.origin + window.location.pathname + '?access=empresa';
-                                        } else if (userType === 'entregador') {
-                                            window.location.href = window.location.origin + window.location.pathname + '?access=entregador';
-                                        } else {
-                                            setCurrentView('home');
-                                        }
+                                        setCurrentView('login');
                                         
                                         addNotification('Logout realizado com sucesso!', 'success');
+                                        
+                                        // Atualizar URL sem recarregar a página
+                                        const newUrl = window.location.origin + window.location.pathname + 
+                                            (userType === 'consumidor' ? '?access=cliente' :
+                                             userType === 'empresa' ? '?access=empresa' :
+                                             userType === 'entregador' ? '?access=entregador' : '');
+                                        
+                                        window.history.pushState({}, '', newUrl);
                                     },
                                     className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
                                 }, 'Sair')
