@@ -51,6 +51,14 @@
     {
       "src": "/pwa",
       "dest": "/delivery-app-enhanced-v4.html"
+    },
+    {
+      "src": "/secure",
+      "dest": "/delivery-app-complete-secure.html"
+    },
+    {
+      "src": "/secure-v2",
+      "dest": "/delivery-app-complete-secure-v2.html"
     }
   ],
   "headers": [

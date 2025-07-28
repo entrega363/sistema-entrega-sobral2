@@ -1,0 +1,69 @@
+# GitLab CI/CD para Sistema Entrega Sobral
+image: node:18
+
+stages:
+  - build
+  - deploy
+
+variables:
+  NODE_ENV: production
+
+# Cache para otimizar builds
+cache:
+  paths:
+    - node_modules/
+
+# Build stage
+build:
+  stage: build
+  script:
+    - echo "Preparando arquivos para deploy..."
+    - ls -la
+    - echo "Verificando arquivos principais..."
+    - test -f index.html || exit 1
+    - test -f delivery-app-complete-secure-v2.html || exit 1
+    - test -f vercel.json || exit 1
+    - echo "Build concluído com sucesso!"
+  artifacts:
+    paths:
+      - "*.html"
+      - "*.js"
+      - "*.css"
+      - "*.json"
+      - "*.md"
+    expire_in: 1 hour
+  only:
+    - main
+    - master
+
+# Deploy para GitLab Pages
+pages:
+  stage: deploy
+  script:
+    - echo "Iniciando deploy para GitLab Pages..."
+    - mkdir public
+    - cp *.html public/ || true
+    - cp *.js public/ || true
+    - cp *.css public/ || true
+    - cp *.json public/ || true
+    - cp -r assets public/ || true
+    - echo "Arquivos copiados para public/"
+    - ls -la public/
+    - echo "Deploy concluído!"
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+    - master
+
+# Deploy manual (opcional)
+deploy_manual:
+  stage: deploy
+  script:
+    - echo "Deploy manual executado"
+    - echo "URL do projeto: $CI_PAGES_URL"
+  when: manual
+  only:
+    - main
+    - master

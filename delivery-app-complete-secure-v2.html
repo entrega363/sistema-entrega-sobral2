@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Entrega Sobral - Completo</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
     <div id="root"></div>
 
@@ -56,8 +58,8 @@
             };
 
             const markAsRead = (notificationId) => {
-                setNotifications(prev => 
-                    prev.map(notif => 
+                setNotifications(prev =>
+                    prev.map(notif =>
                         notif.id === notificationId ? { ...notif, read: true } : notif
                     )
                 );
@@ -69,7 +71,7 @@
 
             // Componente de Notificações
             const NotificationPanel = () => {
-                const userNotifications = notifications.filter(notif => 
+                const userNotifications = notifications.filter(notif =>
                     !notif.userId || notif.userId === currentUser?.id
                 );
 
@@ -119,7 +121,7 @@
                             ])
                         ]),
 
-                        userNotifications.length === 0 ? 
+                        userNotifications.length === 0 ?
                             React.createElement('div', {
                                 key: 'empty',
                                 className: 'p-4 text-center text-gray-500'
@@ -127,7 +129,7 @@
                             React.createElement('div', {
                                 key: 'notifications',
                                 className: 'divide-y'
-                            }, userNotifications.map(notif => 
+                            }, userNotifications.map(notif =>
                                 React.createElement('div', {
                                     key: notif.id,
                                     className: `p-4 hover:bg-gray-50 cursor-pointer ${!notif.read ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`,
@@ -140,9 +142,9 @@
                                         React.createElement('span', {
                                             key: 'type-icon',
                                             className: 'text-lg'
-                                        }, notif.type === 'success' ? '✅' : 
-                                           notif.type === 'error' ? '❌' : 
-                                           notif.type === 'warning' ? '⚠️' : 'ℹ️'),
+                                        }, notif.type === 'success' ? '✅' :
+                                            notif.type === 'error' ? '❌' :
+                                                notif.type === 'warning' ? '⚠️' : 'ℹ️'),
                                         React.createElement('div', {
                                             key: 'text',
                                             className: 'flex-1'
@@ -170,7 +172,7 @@
                 const isAdmin = urlParams.get('admin') === 'true';
                 const isRegister = urlParams.get('register') === 'true';
                 const adminAuth = localStorage.getItem('admin_authenticated') === 'true';
-                
+
                 // Verificar acesso administrativo
                 if (isAdmin && adminAuth) {
                     const adminUser = {
@@ -183,13 +185,13 @@
                     setCurrentView('dashboard');
                     return;
                 }
-                
+
                 // Verificar se é página de cadastro
                 if (isRegister) {
                     setCurrentView('register-select');
                     return;
                 }
-                
+
                 // Sistema de segurança por tipo de acesso
                 if (accessType) {
                     // Verificar se há usuário logado
@@ -323,7 +325,7 @@
 
                 return React.createElement('div', {
                     className: 'min-h-screen flex items-center justify-center p-4'
-                }, 
+                },
                     React.createElement('div', {
                         className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
                     }, [
@@ -480,7 +482,7 @@
 
                 return React.createElement('div', {
                     className: 'min-h-screen flex items-center justify-center p-4'
-                }, 
+                },
                     React.createElement('div', {
                         className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
                     }, [
@@ -507,13 +509,10 @@
                             className: 'mb-6'
                         }, [
                             React.createElement('button', {
-                                key: 'fazer-login',
-                                onClick: () => {
-                                    const baseUrl = window.location.origin + window.location.pathname;
-                                    window.location.href = baseUrl;
-                                },
-                                className: 'w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium'
-                            }, '🔑 Fazer Login')
+                                key: 'voltar',
+                                onClick: () => setCurrentView('home'),
+                                className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
+                            }, '← Voltar')
                         ]),
 
                         React.createElement('div', {
@@ -561,12 +560,12 @@
                         ])
                     ])
                 );
-            };           
- // Tela inicial com opções
+            };
+            // Tela inicial com opções
             const HomeScreen = () => {
                 return React.createElement('div', {
                     className: 'min-h-screen flex items-center justify-center p-4'
-                }, 
+                },
                     React.createElement('div', {
                         className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
                     }, [
@@ -593,11 +592,11 @@
                             className: 'space-y-4'
                         }, [
                             React.createElement('button', {
-                                key: 'login',
-                                onClick: () => setCurrentView('login'),
-                                className: 'w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium'
-                            }, '🔑 Fazer Login'),
-                            
+                                key: 'voltar',
+                                onClick: () => setCurrentView('select-type'),
+                                className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
+                            }, '← Voltar'),
+
                             React.createElement('div', {
                                 key: 'divider',
                                 className: 'text-center text-gray-500 text-sm'
@@ -640,7 +639,7 @@
             const LoginForm = () => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const accessType = urlParams.get('access');
-                
+
                 // Mapear tipos da URL para tipos internos
                 const mapAccessType = (type) => {
                     const mapping = {
@@ -650,17 +649,17 @@
                     };
                     return mapping[type] || type;
                 };
-                
+
                 const [currentLoginType, setCurrentLoginType] = useState(mapAccessType(accessType) || null);
-                const [formData, setFormData] = useState({ 
-                    email: '', 
+                const [formData, setFormData] = useState({
+                    email: '',
                     senha: ''
                 });
                 const [error, setError] = useState('');
 
                 const handleSubmit = (e) => {
                     e.preventDefault();
-                    
+
                     let user = null;
 
                     if (currentLoginType === 'entregador') {
@@ -697,7 +696,7 @@
                 if (!currentLoginType) {
                     return React.createElement('div', {
                         className: 'min-h-screen flex items-center justify-center p-4'
-                    }, 
+                    },
                         React.createElement('div', {
                             className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
                         }, [
@@ -833,7 +832,7 @@
                 const typeInfo = getUserTypeInfo(currentLoginType);
                 return React.createElement('div', {
                     className: 'min-h-screen flex items-center justify-center p-4'
-                }, 
+                },
                     React.createElement('div', {
                         className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
                     }, [
@@ -913,11 +912,10 @@
                                 React.createElement('button', {
                                     key: 'submit',
                                     type: 'submit',
-                                    className: `w-full py-3 px-4 rounded-md font-medium transition duration-200 ${
-                                        typeInfo.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500' :
-                                        typeInfo.color === 'green' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
-                                        'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500'
-                                    } text-white focus:outline-none focus:ring-2`
+                                    className: `w-full py-3 px-4 rounded-md font-medium transition duration-200 ${typeInfo.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500' :
+                                            typeInfo.color === 'green' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
+                                                'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500'
+                                        } text-white focus:outline-none focus:ring-2`
                                 }, `Entrar como ${typeInfo.title}`),
                                 React.createElement('button', {
                                     key: 'voltar',
@@ -954,7 +952,7 @@
                 const [success, setSuccess] = useState('');
 
                 const categorias = [
-                    'Pizzaria', 'Lanchonete', 'Restaurante', 'Açaí', 'Sorvetes', 
+                    'Pizzaria', 'Lanchonete', 'Restaurante', 'Açaí', 'Sorvetes',
                     'Comida Japonesa', 'Padaria', 'Farmácia', 'Mercado', 'Outros'
                 ];
 
@@ -993,7 +991,7 @@
 
                     setEmpresas([...empresas, novaEmpresa]);
                     setSuccess('Empresa cadastrada com sucesso! Aguarde aprovação do administrador.');
-                    
+
                     setFormData({
                         nome: '', cnpj: '', categoria: '', responsavel: '', email: '',
                         telefone: '', endereco: '', bairro: '', senha: '', confirmarSenha: '',
@@ -1003,7 +1001,7 @@
 
                 return React.createElement('div', {
                     className: 'min-h-screen flex items-center justify-center p-4'
-                }, 
+                },
                     React.createElement('div', {
                         className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl'
                     }, [
@@ -1063,7 +1061,7 @@
                                         className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
                                     }, [
                                         React.createElement('option', { key: 'default', value: '' }, 'Selecione uma categoria'),
-                                        ...categorias.map(cat => 
+                                        ...categorias.map(cat =>
                                             React.createElement('option', { key: cat, value: cat }, cat)
                                         )
                                     ])
@@ -1392,7 +1390,7 @@
                             key: 'title',
                             className: 'text-xl font-bold text-gray-800 mb-6'
                         }, '📋 Meus Pedidos'),
-                        
+
                         meusPedidos.length > 0 ? React.createElement('div', {
                             key: 'pedidos-list',
                             className: 'space-y-4'
@@ -1422,13 +1420,12 @@
                                     React.createElement('div', { key: 'status-valor' }, [
                                         React.createElement('span', {
                                             key: 'status',
-                                            className: `px-3 py-1 rounded-full text-sm font-medium ${
-                                                pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
-                                                pedido.status === 'em_preparo' ? 'bg-yellow-100 text-yellow-800' :
-                                                pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
-                                                pedido.status === 'em_entrega' ? 'bg-purple-100 text-purple-800' :
-                                                'bg-gray-100 text-gray-800'
-                                            }`
+                                            className: `px-3 py-1 rounded-full text-sm font-medium ${pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
+                                                    pedido.status === 'em_preparo' ? 'bg-yellow-100 text-yellow-800' :
+                                                        pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                            pedido.status === 'em_entrega' ? 'bg-purple-100 text-purple-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                }`
                                         }, pedido.status.replace('_', ' ').toUpperCase()),
                                         React.createElement('p', {
                                             key: 'valor',
@@ -1501,20 +1498,18 @@
                             React.createElement('button', {
                                 key: 'marketplace-tab',
                                 onClick: () => setActiveTab('marketplace'),
-                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
-                                    activeTab === 'marketplace' 
-                                        ? 'bg-blue-600 text-white' 
+                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${activeTab === 'marketplace'
+                                        ? 'bg-blue-600 text-white'
                                         : 'bg-white text-gray-700 hover:bg-gray-100'
-                                }`
+                                    }`
                             }, '🛒 Marketplace'),
                             React.createElement('button', {
                                 key: 'pedidos-tab',
                                 onClick: () => setActiveTab('pedidos'),
-                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
-                                    activeTab === 'pedidos' 
-                                        ? 'bg-blue-600 text-white' 
+                                className: `px-4 py-2 rounded-md font-medium transition duration-200 ${activeTab === 'pedidos'
+                                        ? 'bg-blue-600 text-white'
                                         : 'bg-white text-gray-700 hover:bg-gray-100'
-                                }`
+                                    }`
                             }, `📋 Meus Pedidos (${meusPedidos.length})`)
                         ]),
 
@@ -1665,7 +1660,7 @@
                             React.createElement('div', {
                                 key: 'orders-list',
                                 className: 'space-y-3'
-                            }, pedidosEmpresa.slice(0, 5).map(pedido => 
+                            }, pedidosEmpresa.slice(0, 5).map(pedido =>
                                 React.createElement('div', {
                                     key: pedido.id,
                                     className: 'flex justify-between items-center p-3 bg-gray-50 rounded-lg'
@@ -1689,12 +1684,11 @@
                                     }, [
                                         React.createElement('span', {
                                             key: 'status',
-                                            className: `px-2 py-1 rounded-full text-xs font-medium ${
-                                                pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
-                                                pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
-                                                pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
-                                                'bg-gray-100 text-gray-800'
-                                            }`
+                                            className: `px-2 py-1 rounded-full text-xs font-medium ${pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
+                                                    pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
+                                                        pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                }`
                                         }, pedido.status.toUpperCase()),
                                         React.createElement('p', {
                                             key: 'valor',
@@ -1784,13 +1778,13 @@
                 };
 
                 const toggleDisponibilidade = (produtoId) => {
-                    setProdutos(produtos.map(p => 
+                    setProdutos(produtos.map(p =>
                         p.id === produtoId ? { ...p, disponivel: !p.disponivel } : p
                     ));
                 };
 
                 const atualizarStatusPedido = (pedidoId, novoStatus) => {
-                    setPedidos(pedidos.map(p => 
+                    setPedidos(pedidos.map(p =>
                         p.id === pedidoId ? { ...p, status: novoStatus } : p
                     ));
                 };
@@ -1842,29 +1836,26 @@
                                 React.createElement('button', {
                                     key: 'overview-tab',
                                     onClick: () => setActiveTab('overview'),
-                                    className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                        activeTab === 'overview' 
-                                            ? 'border-green-500 text-green-600' 
+                                    className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview'
+                                            ? 'border-green-500 text-green-600'
                                             : 'border-transparent text-gray-500 hover:text-gray-700'
-                                    }`
+                                        }`
                                 }, '📊 Visão Geral'),
                                 React.createElement('button', {
                                     key: 'pedidos-tab',
                                     onClick: () => setActiveTab('pedidos'),
-                                    className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                        activeTab === 'pedidos' 
-                                            ? 'border-green-500 text-green-600' 
+                                    className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'pedidos'
+                                            ? 'border-green-500 text-green-600'
                                             : 'border-transparent text-gray-500 hover:text-gray-700'
-                                    }`
+                                        }`
                                 }, '📋 Pedidos'),
                                 React.createElement('button', {
                                     key: 'produtos-tab',
                                     onClick: () => setActiveTab('produtos'),
-                                    className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                        activeTab === 'produtos' 
-                                            ? 'border-green-500 text-green-600' 
+                                    className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'produtos'
+                                            ? 'border-green-500 text-green-600'
                                             : 'border-transparent text-gray-500 hover:text-gray-700'
-                                    }`
+                                        }`
                                 }, '🍽️ Produtos')
                             ])
                         ])
@@ -1886,8 +1877,8 @@
                                 key: 'pedidos-title',
                                 className: 'text-xl font-semibold'
                             }, 'Gerenciar Pedidos'),
-                            
-                            pedidosEmpresa.length === 0 ? 
+
+                            pedidosEmpresa.length === 0 ?
                                 React.createElement('div', {
                                     key: 'no-pedidos',
                                     className: 'bg-white rounded-lg shadow p-6 text-center'
@@ -1900,7 +1891,7 @@
                                 React.createElement('div', {
                                     key: 'pedidos-list',
                                     className: 'grid gap-4'
-                                }, pedidosEmpresa.map(pedido => 
+                                }, pedidosEmpresa.map(pedido =>
                                     React.createElement('div', {
                                         key: pedido.id,
                                         className: 'bg-white rounded-lg shadow p-6'
@@ -1929,13 +1920,12 @@
                                             }, [
                                                 React.createElement('span', {
                                                     key: 'status',
-                                                    className: `px-3 py-1 rounded-full text-sm font-medium ${
-                                                        pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
-                                                        pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
-                                                        pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
-                                                        pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
-                                                        'bg-gray-100 text-gray-800'
-                                                    }`
+                                                    className: `px-3 py-1 rounded-full text-sm font-medium ${pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
+                                                            pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
+                                                                pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                                    pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
+                                                                        'bg-gray-100 text-gray-800'
+                                                        }`
                                                 }, pedido.status.replace('_', ' ').toUpperCase()),
                                                 React.createElement('p', {
                                                     key: 'valor',
@@ -2003,7 +1993,7 @@
                                         type: 'text',
                                         placeholder: 'Nome do produto',
                                         value: novoProduto.nome,
-                                        onChange: (e) => setNovoProduto({...novoProduto, nome: e.target.value}),
+                                        onChange: (e) => setNovoProduto({ ...novoProduto, nome: e.target.value }),
                                         className: 'px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
                                     }),
                                     React.createElement('input', {
@@ -2012,7 +2002,7 @@
                                         step: '0.01',
                                         placeholder: 'Preço',
                                         value: novoProduto.preco,
-                                        onChange: (e) => setNovoProduto({...novoProduto, preco: e.target.value}),
+                                        onChange: (e) => setNovoProduto({ ...novoProduto, preco: e.target.value }),
                                         className: 'px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
                                     }),
                                     React.createElement('input', {
@@ -2020,7 +2010,7 @@
                                         type: 'text',
                                         placeholder: 'Categoria',
                                         value: novoProduto.categoria,
-                                        onChange: (e) => setNovoProduto({...novoProduto, categoria: e.target.value}),
+                                        onChange: (e) => setNovoProduto({ ...novoProduto, categoria: e.target.value }),
                                         className: 'px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
                                     }),
                                     React.createElement('input', {
@@ -2028,7 +2018,7 @@
                                         type: 'text',
                                         placeholder: 'Emoji do produto',
                                         value: novoProduto.imagem,
-                                        onChange: (e) => setNovoProduto({...novoProduto, imagem: e.target.value}),
+                                        onChange: (e) => setNovoProduto({ ...novoProduto, imagem: e.target.value }),
                                         className: 'px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
                                     })
                                 ]),
@@ -2036,7 +2026,7 @@
                                     key: 'descricao',
                                     placeholder: 'Descrição do produto',
                                     value: novoProduto.descricao,
-                                    onChange: (e) => setNovoProduto({...novoProduto, descricao: e.target.value}),
+                                    onChange: (e) => setNovoProduto({ ...novoProduto, descricao: e.target.value }),
                                     className: 'w-full mt-4 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
                                     rows: 3
                                 }),
@@ -2051,7 +2041,7 @@
                             React.createElement('div', {
                                 key: 'produtos-list',
                                 className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-                            }, produtosEmpresa.map(produto => 
+                            }, produtosEmpresa.map(produto =>
                                 React.createElement('div', {
                                     key: produto.id,
                                     className: `bg-white rounded-lg shadow p-4 ${!produto.disponivel ? 'opacity-60' : ''}`
@@ -2067,11 +2057,10 @@
                                         React.createElement('button', {
                                             key: 'toggle',
                                             onClick: () => toggleDisponibilidade(produto.id),
-                                            className: `px-2 py-1 rounded text-xs font-medium ${
-                                                produto.disponivel 
-                                                    ? 'bg-green-100 text-green-800' 
+                                            className: `px-2 py-1 rounded text-xs font-medium ${produto.disponivel
+                                                    ? 'bg-green-100 text-green-800'
                                                     : 'bg-red-100 text-red-800'
-                                            }`
+                                                }`
                                         }, produto.disponivel ? 'Disponível' : 'Indisponível')
                                     ]),
                                     React.createElement('h4', {
@@ -2180,13 +2169,13 @@
                 const pedidosEmAndamento = meusPedidos.filter(p => p.status === 'saiu_entrega');
 
                 const aceitarPedido = (pedidoId) => {
-                    const pedidosAtualizados = pedidos.map(p => 
-                        p.id === pedidoId 
+                    const pedidosAtualizados = pedidos.map(p =>
+                        p.id === pedidoId
                             ? { ...p, entregadorId: currentUser.id, entregadorNome: currentUser.nome, status: 'saiu_entrega' }
                             : p
                     );
                     setPedidos(pedidosAtualizados);
-                    
+
                     addNotification(
                         `🚚 Pedido #${pedidoId.slice(-4)} aceito! Dirija-se ao local de retirada.`,
                         'success',
@@ -2195,13 +2184,13 @@
                 };
 
                 const finalizarEntrega = (pedidoId) => {
-                    const pedidosAtualizados = pedidos.map(p => 
-                        p.id === pedidoId 
+                    const pedidosAtualizados = pedidos.map(p =>
+                        p.id === pedidoId
                             ? { ...p, status: 'entregue', entregueEm: new Date().toLocaleString('pt-BR') }
                             : p
                     );
                     setPedidos(pedidosAtualizados);
-                    
+
                     addNotification(
                         `✅ Entrega #${pedidoId.slice(-4)} finalizada com sucesso!`,
                         'success',
@@ -2244,11 +2233,10 @@
                                 React.createElement('button', {
                                     key: 'toggle-btn',
                                     onClick: () => setStatusDisponivel(!statusDisponivel),
-                                    className: `px-4 py-2 rounded-md font-medium transition duration-200 ${
-                                        statusDisponivel 
-                                            ? 'bg-green-600 text-white hover:bg-green-700' 
+                                    className: `px-4 py-2 rounded-md font-medium transition duration-200 ${statusDisponivel
+                                            ? 'bg-green-600 text-white hover:bg-green-700'
                                             : 'bg-red-600 text-white hover:bg-red-700'
-                                    }`
+                                        }`
                                 }, statusDisponivel ? '✅ Disponível' : '❌ Indisponível')
                             ])
                         ])
@@ -2326,20 +2314,18 @@
                             React.createElement('button', {
                                 key: 'pedidos-tab',
                                 onClick: () => setActiveTab('pedidos'),
-                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'pedidos' 
-                                        ? 'border-orange-500 text-orange-600' 
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'pedidos'
+                                        ? 'border-orange-500 text-orange-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                                }`
+                                    }`
                             }, `📦 Pedidos Disponíveis (${pedidosDisponiveis.length})`),
                             React.createElement('button', {
                                 key: 'minhas-tab',
                                 onClick: () => setActiveTab('minhas'),
-                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'minhas' 
-                                        ? 'border-orange-500 text-orange-600' 
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'minhas'
+                                        ? 'border-orange-500 text-orange-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                                }`
+                                    }`
                             }, `🚚 Minhas Entregas (${meusPedidos.length})`)
                         ])
                     ]),
@@ -2358,8 +2344,8 @@
                                 key: 'title',
                                 className: 'text-xl font-semibold text-gray-800 mb-4'
                             }, '📦 Pedidos Disponíveis para Entrega'),
-                            
-                            pedidosDisponiveis.length === 0 ? 
+
+                            pedidosDisponiveis.length === 0 ?
                                 React.createElement('div', {
                                     key: 'empty',
                                     className: 'text-center py-8'
@@ -2376,7 +2362,7 @@
                                 React.createElement('div', {
                                     key: 'pedidos-list',
                                     className: 'space-y-4'
-                                }, pedidosDisponiveis.map(pedido => 
+                                }, pedidosDisponiveis.map(pedido =>
                                     React.createElement('div', {
                                         key: pedido.id,
                                         className: 'border border-gray-200 rounded-lg p-4 hover:shadow-md transition duration-200'
@@ -2432,11 +2418,10 @@
                                             key: 'accept-btn',
                                             onClick: () => aceitarPedido(pedido.id),
                                             disabled: !statusDisponivel,
-                                            className: `w-full py-2 px-4 rounded-md font-medium transition duration-200 ${
-                                                statusDisponivel 
-                                                    ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                                            className: `w-full py-2 px-4 rounded-md font-medium transition duration-200 ${statusDisponivel
+                                                    ? 'bg-orange-600 text-white hover:bg-orange-700'
                                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            }`
+                                                }`
                                         }, statusDisponivel ? '🚚 Aceitar Entrega' : '❌ Indisponível')
                                     ])
                                 ))
@@ -2451,8 +2436,8 @@
                                 key: 'title',
                                 className: 'text-xl font-semibold text-gray-800 mb-4'
                             }, '🚚 Minhas Entregas'),
-                            
-                            meusPedidos.length === 0 ? 
+
+                            meusPedidos.length === 0 ?
                                 React.createElement('div', {
                                     key: 'empty',
                                     className: 'text-center py-8'
@@ -2469,7 +2454,7 @@
                                 React.createElement('div', {
                                     key: 'entregas-list',
                                     className: 'space-y-4'
-                                }, meusPedidos.map(pedido => 
+                                }, meusPedidos.map(pedido =>
                                     React.createElement('div', {
                                         key: pedido.id,
                                         className: 'border border-gray-200 rounded-lg p-4'
@@ -2500,13 +2485,12 @@
                                             }, [
                                                 React.createElement('span', {
                                                     key: 'status',
-                                                    className: `px-3 py-1 rounded-full text-sm font-medium ${
-                                                        pedido.status === 'saiu_entrega' ? 'bg-orange-100 text-orange-800' :
-                                                        pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
-                                                        'bg-gray-100 text-gray-800'
-                                                    }`
-                                                }, pedido.status === 'saiu_entrega' ? 'EM TRÂNSITO' : 
-                                                   pedido.status === 'entregue' ? 'ENTREGUE' : pedido.status.toUpperCase()),
+                                                    className: `px-3 py-1 rounded-full text-sm font-medium ${pedido.status === 'saiu_entrega' ? 'bg-orange-100 text-orange-800' :
+                                                            pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                        }`
+                                                }, pedido.status === 'saiu_entrega' ? 'EM TRÂNSITO' :
+                                                    pedido.status === 'entregue' ? 'ENTREGUE' : pedido.status.toUpperCase()),
                                                 React.createElement('p', {
                                                     key: 'valor',
                                                     className: 'text-lg font-bold text-green-600 mt-1'
@@ -2662,38 +2646,34 @@
                             React.createElement('button', {
                                 key: 'overview-tab',
                                 onClick: () => setActiveTab('overview'),
-                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'overview' 
-                                        ? 'border-purple-500 text-purple-600' 
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview'
+                                        ? 'border-purple-500 text-purple-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                                }`
+                                    }`
                             }, '📊 Visão Geral'),
                             React.createElement('button', {
                                 key: 'empresas-tab',
                                 onClick: () => setActiveTab('empresas'),
-                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'empresas' 
-                                        ? 'border-purple-500 text-purple-600' 
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'empresas'
+                                        ? 'border-purple-500 text-purple-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                                }`
+                                    }`
                             }, '🏢 Empresas'),
                             React.createElement('button', {
                                 key: 'usuarios-tab',
                                 onClick: () => setActiveTab('usuarios'),
-                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'usuarios' 
-                                        ? 'border-purple-500 text-purple-600' 
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'usuarios'
+                                        ? 'border-purple-500 text-purple-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                                }`
+                                    }`
                             }, '👥 Usuários'),
                             React.createElement('button', {
                                 key: 'pedidos-tab',
                                 onClick: () => setActiveTab('pedidos'),
-                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'pedidos' 
-                                        ? 'border-purple-500 text-purple-600' 
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'pedidos'
+                                        ? 'border-purple-500 text-purple-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                                }`
+                                    }`
                             }, '📦 Pedidos')
                         ])
                     ]),
@@ -2712,7 +2692,7 @@
                                 key: 'title',
                                 className: 'text-2xl font-bold text-gray-800'
                             }, '📊 Resumo do Sistema'),
-                            
+
                             React.createElement('div', {
                                 key: 'summary-grid',
                                 className: 'grid grid-cols-1 md:grid-cols-2 gap-6'
@@ -2765,7 +2745,7 @@
                                 React.createElement('div', {
                                     key: 'activity-list',
                                     className: 'space-y-2'
-                                }, pedidos.slice(0, 5).map(pedido => 
+                                }, pedidos.slice(0, 5).map(pedido =>
                                     React.createElement('div', {
                                         key: pedido.id,
                                         className: 'flex justify-between items-center p-2 bg-white rounded'
@@ -2792,11 +2772,11 @@
                                 key: 'title',
                                 className: 'text-2xl font-bold text-gray-800'
                             }, '🏢 Gerenciar Empresas'),
-                            
+
                             React.createElement('div', {
                                 key: 'empresas-list',
                                 className: 'space-y-4'
-                            }, empresas.map(empresa => 
+                            }, empresas.map(empresa =>
                                 React.createElement('div', {
                                     key: empresa.id,
                                     className: 'border border-gray-200 rounded-lg p-4'
@@ -2823,11 +2803,10 @@
                                         ]),
                                         React.createElement('span', {
                                             key: 'status',
-                                            className: `px-3 py-1 rounded-full text-sm font-medium ${
-                                                empresa.status === 'ativo' ? 'bg-green-100 text-green-800' :
-                                                empresa.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
-                                                'bg-red-100 text-red-800'
-                                            }`
+                                            className: `px-3 py-1 rounded-full text-sm font-medium ${empresa.status === 'ativo' ? 'bg-green-100 text-green-800' :
+                                                    empresa.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
+                                                        'bg-red-100 text-red-800'
+                                                }`
                                         }, empresa.status.toUpperCase())
                                     ])
                                 ])
@@ -2843,7 +2822,7 @@
                                 key: 'title',
                                 className: 'text-2xl font-bold text-gray-800'
                             }, '👥 Gerenciar Usuários'),
-                            
+
                             React.createElement('div', {
                                 key: 'stats-row',
                                 className: 'grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'
@@ -2900,7 +2879,7 @@
                                 React.createElement('div', {
                                     key: 'list',
                                     className: 'space-y-2'
-                                }, [...consumidores, ...users].slice(0, 10).map(user => 
+                                }, [...consumidores, ...users].slice(0, 10).map(user =>
                                     React.createElement('div', {
                                         key: user.id,
                                         className: 'flex justify-between items-center p-2 bg-white rounded'
@@ -2927,11 +2906,11 @@
                                 key: 'title',
                                 className: 'text-2xl font-bold text-gray-800'
                             }, '📦 Gerenciar Pedidos'),
-                            
+
                             React.createElement('div', {
                                 key: 'pedidos-list',
                                 className: 'space-y-4'
-                            }, pedidos.slice(0, 10).map(pedido => 
+                            }, pedidos.slice(0, 10).map(pedido =>
                                 React.createElement('div', {
                                     key: pedido.id,
                                     className: 'border border-gray-200 rounded-lg p-4'
@@ -2958,14 +2937,13 @@
                                         }, [
                                             React.createElement('span', {
                                                 key: 'status',
-                                                className: `px-3 py-1 rounded-full text-sm font-medium ${
-                                                    pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
-                                                    pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
-                                                    pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
-                                                    pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
-                                                    pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
-                                                    'bg-gray-100 text-gray-800'
-                                                }`
+                                                className: `px-3 py-1 rounded-full text-sm font-medium ${pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
+                                                        pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
+                                                            pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                                pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
+                                                                    pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
+                                                                        'bg-gray-100 text-gray-800'
+                                                    }`
                                             }, pedido.status.replace('_', ' ').toUpperCase()),
                                             React.createElement('p', {
                                                 key: 'valor',
@@ -3074,16 +3052,16 @@
                                     onClick: () => {
                                         const userType = currentUser.tipo;
                                         setCurrentUser(null);
-                                        
+
                                         addNotification('Logout realizado com sucesso!', 'success');
-                                        
+
                                         // Redirecionar para link específico do tipo de usuário
                                         const baseUrl = window.location.origin + window.location.pathname;
-                                        const newUrl = baseUrl + 
+                                        const newUrl = baseUrl +
                                             (userType === 'consumidor' ? '?access=cliente' :
-                                             userType === 'empresa' ? '?access=empresa' :
-                                             userType === 'entregador' ? '?access=entregador' : '');
-                                        
+                                                userType === 'empresa' ? '?access=empresa' :
+                                                    userType === 'entregador' ? '?access=entregador' : '');
+
                                         window.location.href = newUrl;
                                     },
                                     className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
@@ -3106,7 +3084,7 @@
 
                 const handleSubmit = (e) => {
                     e.preventDefault();
-                    
+
                     if (!formData.nome || !formData.email || !formData.senha) {
                         addNotification('Por favor, preencha todos os campos obrigatórios!', 'error');
                         return;
@@ -3167,7 +3145,7 @@
                                     key: 'nome-input',
                                     type: 'text',
                                     value: formData.nome,
-                                    onChange: (e) => setFormData({...formData, nome: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, nome: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                                     placeholder: 'Digite seu nome completo'
                                 })
@@ -3184,7 +3162,7 @@
                                     key: 'email-input',
                                     type: 'email',
                                     value: formData.email,
-                                    onChange: (e) => setFormData({...formData, email: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                                     placeholder: 'Digite seu email'
                                 })
@@ -3201,7 +3179,7 @@
                                     key: 'senha-input',
                                     type: 'password',
                                     value: formData.senha,
-                                    onChange: (e) => setFormData({...formData, senha: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                                     placeholder: 'Digite sua senha'
                                 })
@@ -3218,7 +3196,7 @@
                                     key: 'telefone-input',
                                     type: 'tel',
                                     value: formData.telefone,
-                                    onChange: (e) => setFormData({...formData, telefone: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, telefone: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                                     placeholder: '(85) 99999-9999'
                                 })
@@ -3234,7 +3212,7 @@
                                 React.createElement('textarea', {
                                     key: 'endereco-input',
                                     value: formData.endereco,
-                                    onChange: (e) => setFormData({...formData, endereco: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, endereco: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                                     placeholder: 'Digite seu endereço completo',
                                     rows: 3
@@ -3272,7 +3250,7 @@
 
                 const handleSubmit = (e) => {
                     e.preventDefault();
-                    
+
                     if (!formData.nome || !formData.email || !formData.senha || !formData.cnh) {
                         addNotification('Por favor, preencha todos os campos obrigatórios!', 'error');
                         return;
@@ -3336,7 +3314,7 @@
                                     key: 'nome-input',
                                     type: 'text',
                                     value: formData.nome,
-                                    onChange: (e) => setFormData({...formData, nome: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, nome: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
                                     placeholder: 'Digite seu nome completo'
                                 })
@@ -3353,7 +3331,7 @@
                                     key: 'email-input',
                                     type: 'email',
                                     value: formData.email,
-                                    onChange: (e) => setFormData({...formData, email: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
                                     placeholder: 'Digite seu email'
                                 })
@@ -3370,7 +3348,7 @@
                                     key: 'senha-input',
                                     type: 'password',
                                     value: formData.senha,
-                                    onChange: (e) => setFormData({...formData, senha: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
                                     placeholder: 'Digite sua senha'
                                 })
@@ -3387,7 +3365,7 @@
                                     key: 'telefone-input',
                                     type: 'tel',
                                     value: formData.telefone,
-                                    onChange: (e) => setFormData({...formData, telefone: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, telefone: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
                                     placeholder: '(85) 99999-9999'
                                 })
@@ -3404,7 +3382,7 @@
                                     key: 'cnh-input',
                                     type: 'text',
                                     value: formData.cnh,
-                                    onChange: (e) => setFormData({...formData, cnh: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, cnh: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
                                     placeholder: 'Número da CNH'
                                 })
@@ -3421,7 +3399,7 @@
                                     key: 'veiculo-input',
                                     type: 'text',
                                     value: formData.veiculo,
-                                    onChange: (e) => setFormData({...formData, veiculo: e.target.value}),
+                                    onChange: (e) => setFormData({ ...formData, veiculo: e.target.value }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
                                     placeholder: 'Ex: Moto Honda CG 160'
                                 })
@@ -3438,7 +3416,7 @@
                                     key: 'placa-input',
                                     type: 'text',
                                     value: formData.placa,
-                                    onChange: (e) => setFormData({...formData, placa: e.target.value.toUpperCase()}),
+                                    onChange: (e) => setFormData({ ...formData, placa: e.target.value.toUpperCase() }),
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
                                     placeholder: 'ABC-1234'
                                 })
@@ -3486,10 +3464,10 @@
                         className: 'pt-4'
                     }, [
                         currentUser.tipo === 'consumidor' ? React.createElement(ConsumidorDashboard) :
-                        currentUser.tipo === 'empresa' ? React.createElement(EmpresaDashboard) :
-                        currentUser.tipo === 'entregador' ? React.createElement(EntregadorDashboard) :
-                        currentUser.tipo === 'admin' ? React.createElement(AdminDashboard) :
-                        React.createElement(SimpleDashboard)
+                            currentUser.tipo === 'empresa' ? React.createElement(EmpresaDashboard) :
+                                currentUser.tipo === 'entregador' ? React.createElement(EntregadorDashboard) :
+                                    currentUser.tipo === 'admin' ? React.createElement(AdminDashboard) :
+                                        React.createElement(SimpleDashboard)
                     ])
                 ]);
             }
@@ -3505,4 +3483,5 @@
         root.render(React.createElement(App));
     </script>
 </body>
+
 </html>
