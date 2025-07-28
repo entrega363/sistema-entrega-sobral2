@@ -1,0 +1,2593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Completo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Hook para localStorage
+        function useStoredState(key, initialValue) {
+            const [state, setState] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                try {
+                    setState(value);
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.error('Erro ao salvar no localStorage:', error);
+                }
+            };
+
+            return [state, setValue];
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = useState('home');
+            const [currentUser, setCurrentUser] = useState(null);
+
+            // Estados dos dados
+            const [users, setUsers] = useStoredState('delivery_users', [
+                {
+                    id: 'user1',
+                    nome: 'João Entregador',
+                    email: 'joao@teste.com',
+                    senha: '123456',
+                    tipo: 'entregador',
+                    status: 'ativo',
+                    telefone: '(88) 99999-1234',
+                    cpf: '123.456.789-00',
+                    veiculo: 'Moto Honda CG 160',
+                    placa: 'ABC-1234',
+                    disponivel: true,
+                    totalEntregas: 15,
+                    endereco: 'Rua das Palmeiras, 100',
+                    bairro: 'Centro',
+                    cnh: '12345678901'
+                }
+            ]);
+
+            const [empresas, setEmpresas] = useStoredState('delivery_empresas', [
+                {
+                    id: 'emp1',
+                    nome: 'Pizza do Zé',
+                    email: 'pizza@teste.com',
+                    senha: '123456',
+                    tipo: 'empresa',
+                    status: 'ativo',
+                    cnpj: '12.345.678/0001-90',
+                    telefone: '(88) 3611-1234',
+                    categoria: 'Pizzaria',
+                    endereco: 'Rua Coronel Mont\'Alverne, 500 - Centro',
+                    responsavel: 'José Silva',
+                    bairro: 'Centro',
+                    taxaEntrega: '5.00',
+                    tempoEntrega: '30-45 min'
+                }
+            ]);
+
+            const [consumidores, setConsumidores] = useStoredState('delivery_consumidores', [
+                {
+                    id: 'cons1',
+                    nome: 'Maria Silva',
+                    email: 'maria@teste.com',
+                    senha: '123456',
+                    telefone: '(88) 99999-5678',
+                    cpf: '987.654.321-00',
+                    endereco: 'Rua das Flores, 123',
+                    bairro: 'Centro',
+                    pontoReferencia: 'Próximo ao mercado',
+                    cadastradoEm: new Date().toLocaleString('pt-BR')
+                }
+            ]);
+
+            const [pedidos, setPedidos] = useStoredState('delivery_pedidos', [
+                {
+                    id: '1',
+                    cliente: 'Maria Silva',
+                    endereco: 'Rua das Flores, 123 - Centro',
+                    telefone: '(88) 99999-5678',
+                    valor: 45.90,
+                    status: 'disponivel',
+                    items: 'Pizza Margherita, Coca-Cola 2L',
+                    empresaId: 'emp1',
+                    empresaNome: 'Pizza do Zé',
+                    criadoEm: new Date().toLocaleString('pt-BR')
+                },
+                {
+                    id: '2',
+                    cliente: 'João Santos',
+                    endereco: 'Av. Dom José, 456 - Dom Expedito',
+                    telefone: '(88) 98888-1234',
+                    valor: 32.50,
+                    status: 'pronto',
+                    items: 'Pizza Calabresa, Guaraná',
+                    empresaId: 'emp1',
+                    empresaNome: 'Pizza do Zé',
+                    criadoEm: new Date().toLocaleString('pt-BR')
+                }
+            ]);
+
+            const admins = [
+                {
+                    id: 'admin1',
+                    nome: 'Administrador',
+                    email: 'admin',
+                    senha: 'tenderbr0',
+                    tipo: 'admin'
+                }
+            ];
+            // Tela inicial com opções
+            const HomeScreen = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-6xl mb-4'
+                            }, '🚚'),
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Sistema Entrega Sobral'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Plataforma completa de delivery')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'options',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('button', {
+                                key: 'login',
+                                onClick: () => setCurrentView('login'),
+                                className: 'w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium'
+                            }, '🔑 Fazer Login'),
+
+                            React.createElement('div', {
+                                key: 'divider',
+                                className: 'text-center text-gray-500 text-sm'
+                            }, 'ou cadastre-se como:'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-empresa',
+                                onClick: () => setCurrentView('cadastro-empresa'),
+                                className: 'w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                            }, '🏢 Empresa/Restaurante'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-entregador',
+                                onClick: () => setCurrentView('cadastro-entregador'),
+                                className: 'w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 transition duration-200 font-medium'
+                            }, '🏍️ Entregador'),
+
+                            React.createElement('button', {
+                                key: 'cadastro-consumidor',
+                                onClick: () => setCurrentView('cadastro-consumidor'),
+                                className: 'w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition duration-200 font-medium'
+                            }, '👤 Cliente/Consumidor')
+                        ])
+                    ])
+                );
+            };
+
+            // Formulário de Cadastro de Empresa
+            const CadastroEmpresa = () => {
+                const [formData, setFormData] = useState({
+                    nome: '',
+                    cnpj: '',
+                    categoria: '',
+                    responsavel: '',
+                    email: '',
+                    telefone: '',
+                    endereco: '',
+                    bairro: '',
+                    senha: '',
+                    confirmarSenha: '',
+                    taxaEntrega: '',
+                    tempoEntrega: ''
+                });
+                const [error, setError] = useState('');
+                const [success, setSuccess] = useState('');
+
+                const categorias = [
+                    'Pizzaria', 'Lanchonete', 'Restaurante', 'Açaí', 'Sorvetes',
+                    'Comida Japonesa', 'Padaria', 'Farmácia', 'Mercado', 'Outros'
+                ];
+
+                const bairros = [
+                    'Centro', 'Dom Expedito', 'Sinhá Sabóia', 'Junco', 'Pedrinhas',
+                    'Parque Silvana', 'Alto da Brasília', 'Cohab', 'Outros'
+                ];
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    setError('');
+
+                    // Validações
+                    if (formData.senha !== formData.confirmarSenha) {
+                        setError('As senhas não coincidem');
+                        return;
+                    }
+
+                    if (formData.senha.length < 6) {
+                        setError('A senha deve ter pelo menos 6 caracteres');
+                        return;
+                    }
+
+                    if (empresas.find(emp => emp.email === formData.email)) {
+                        setError('Este email já está cadastrado');
+                        return;
+                    }
+
+                    if (empresas.find(emp => emp.cnpj === formData.cnpj)) {
+                        setError('Este CNPJ já está cadastrado');
+                        return;
+                    }
+
+                    // Criar nova empresa
+                    const novaEmpresa = {
+                        id: 'emp_' + Date.now(),
+                        ...formData,
+                        tipo: 'empresa',
+                        status: 'pendente',
+                        cadastradaEm: new Date().toLocaleString('pt-BR')
+                    };
+                    delete novaEmpresa.confirmarSenha;
+
+                    setEmpresas([...empresas, novaEmpresa]);
+                    setSuccess('Empresa cadastrada com sucesso! Aguarde aprovação do administrador.');
+
+                    // Limpar formulário
+                    setFormData({
+                        nome: '', cnpj: '', categoria: '', responsavel: '', email: '',
+                        telefone: '', endereco: '', bairro: '', senha: '', confirmarSenha: '',
+                        taxaEntrega: '', tempoEntrega: ''
+                    });
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, '🏢 Cadastro de Empresa'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Cadastre seu restaurante ou estabelecimento')
+                        ]),
+
+                        success && React.createElement('div', {
+                            key: 'success',
+                            className: 'mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md'
+                        }, success),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            // Nome da empresa
+                            React.createElement('div', {
+                                key: 'nome-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'nome' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Nome da Empresa *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.nome,
+                                        onChange: (e) => setFormData({ ...formData, nome: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Ex: Pizza do João'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'cnpj' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'CNPJ *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.cnpj,
+                                        onChange: (e) => setFormData({ ...formData, cnpj: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '00.000.000/0000-00'
+                                    })
+                                ])
+                            ]),
+
+                            // Categoria e Responsável
+                            React.createElement('div', {
+                                key: 'categoria-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'categoria' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Categoria *'),
+                                    React.createElement('select', {
+                                        key: 'select',
+                                        required: true,
+                                        value: formData.categoria,
+                                        onChange: (e) => setFormData({ ...formData, categoria: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    }, [
+                                        React.createElement('option', { key: 'default', value: '' }, 'Selecione uma categoria'),
+                                        ...categorias.map(cat =>
+                                            React.createElement('option', { key: cat, value: cat }, cat)
+                                        )
+                                    ])
+                                ]),
+                                React.createElement('div', { key: 'responsavel' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Responsável *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.responsavel,
+                                        onChange: (e) => setFormData({ ...formData, responsavel: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Nome do responsável'
+                                    })
+                                ])
+                            ]),
+
+                            // Email e Telefone
+                            React.createElement('div', {
+                                key: 'contato-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'email' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Email *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'email',
+                                        required: true,
+                                        value: formData.email,
+                                        onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'empresa@email.com'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'telefone' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Telefone *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'tel',
+                                        required: true,
+                                        value: formData.telefone,
+                                        onChange: (e) => setFormData({ ...formData, telefone: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '(88) 99999-9999'
+                                    })
+                                ])
+                            ]),
+
+                            // Endereço e Bairro
+                            React.createElement('div', {
+                                key: 'endereco-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'endereco' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Endereço *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.endereco,
+                                        onChange: (e) => setFormData({ ...formData, endereco: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Rua, número'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'bairro' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Bairro *'),
+                                    React.createElement('select', {
+                                        key: 'select',
+                                        required: true,
+                                        value: formData.bairro,
+                                        onChange: (e) => setFormData({ ...formData, bairro: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    }, [
+                                        React.createElement('option', { key: 'default', value: '' }, 'Selecione o bairro'),
+                                        ...bairros.map(bairro =>
+                                            React.createElement('option', { key: bairro, value: bairro }, bairro)
+                                        )
+                                    ])
+                                ])
+                            ]),
+
+                            // Taxa de entrega e Tempo
+                            React.createElement('div', {
+                                key: 'servico-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'taxa' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Taxa de Entrega (R$)'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'number',
+                                        step: '0.01',
+                                        value: formData.taxaEntrega,
+                                        onChange: (e) => setFormData({ ...formData, taxaEntrega: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '5.00'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'tempo' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Tempo de Entrega'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        value: formData.tempoEntrega,
+                                        onChange: (e) => setFormData({ ...formData, tempoEntrega: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '30-45 min'
+                                    })
+                                ])
+                            ]),
+
+                            // Senhas
+                            React.createElement('div', {
+                                key: 'senha-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'senha' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Senha *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'password',
+                                        required: true,
+                                        value: formData.senha,
+                                        onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Mínimo 6 caracteres'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'confirmar' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Confirmar Senha *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'password',
+                                        required: true,
+                                        value: formData.confirmarSenha,
+                                        onChange: (e) => setFormData({ ...formData, confirmarSenha: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Repita a senha'
+                                    })
+                                ])
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center'
+                            }, error),
+
+                            React.createElement('div', {
+                                key: 'buttons',
+                                className: 'flex space-x-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    type: 'button',
+                                    onClick: () => setCurrentView('home'),
+                                    className: 'flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                                }, 'Voltar'),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: 'flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200'
+                                }, 'Cadastrar Empresa')
+                            ])
+                        ])
+                    ])
+                );
+            };
+            // Formulário de Cadastro de Entregador
+            const CadastroEntregador = () => {
+                const [formData, setFormData] = useState({
+                    nome: '',
+                    cpf: '',
+                    email: '',
+                    telefone: '',
+                    endereco: '',
+                    bairro: '',
+                    veiculo: '',
+                    placa: '',
+                    cnh: '',
+                    senha: '',
+                    confirmarSenha: ''
+                });
+                const [error, setError] = useState('');
+                const [success, setSuccess] = useState('');
+
+                const bairros = [
+                    'Centro', 'Dom Expedito', 'Sinhá Sabóia', 'Junco', 'Pedrinhas',
+                    'Parque Silvana', 'Alto da Brasília', 'Cohab', 'Outros'
+                ];
+
+                const tiposVeiculo = [
+                    'Moto Honda CG 160', 'Moto Yamaha Factor', 'Moto Honda Biz',
+                    'Moto Yamaha XTZ', 'Bicicleta', 'Carro', 'Outros'
+                ];
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    setError('');
+
+                    // Validações
+                    if (formData.senha !== formData.confirmarSenha) {
+                        setError('As senhas não coincidem');
+                        return;
+                    }
+
+                    if (formData.senha.length < 6) {
+                        setError('A senha deve ter pelo menos 6 caracteres');
+                        return;
+                    }
+
+                    if (users.find(user => user.email === formData.email)) {
+                        setError('Este email já está cadastrado');
+                        return;
+                    }
+
+                    if (users.find(user => user.cpf === formData.cpf)) {
+                        setError('Este CPF já está cadastrado');
+                        return;
+                    }
+
+                    // Criar novo entregador
+                    const novoEntregador = {
+                        id: 'user_' + Date.now(),
+                        ...formData,
+                        tipo: 'entregador',
+                        status: 'pendente',
+                        disponivel: false,
+                        totalEntregas: 0,
+                        cadastradoEm: new Date().toLocaleString('pt-BR')
+                    };
+                    delete novoEntregador.confirmarSenha;
+
+                    setUsers([...users, novoEntregador]);
+                    setSuccess('Entregador cadastrado com sucesso! Aguarde aprovação do administrador.');
+
+                    // Limpar formulário
+                    setFormData({
+                        nome: '', cpf: '', email: '', telefone: '', endereco: '', bairro: '',
+                        veiculo: '', placa: '', cnh: '', senha: '', confirmarSenha: ''
+                    });
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, '🏍️ Cadastro de Entregador'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Cadastre-se para fazer entregas')
+                        ]),
+
+                        success && React.createElement('div', {
+                            key: 'success',
+                            className: 'mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md'
+                        }, success),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            // Nome e CPF
+                            React.createElement('div', {
+                                key: 'nome-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'nome' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Nome Completo *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.nome,
+                                        onChange: (e) => setFormData({ ...formData, nome: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'João Silva Santos'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'cpf' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'CPF *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.cpf,
+                                        onChange: (e) => setFormData({ ...formData, cpf: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '000.000.000-00'
+                                    })
+                                ])
+                            ]),
+
+                            // Email e Telefone
+                            React.createElement('div', {
+                                key: 'contato-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'email' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Email *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'email',
+                                        required: true,
+                                        value: formData.email,
+                                        onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'entregador@email.com'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'telefone' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Telefone *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'tel',
+                                        required: true,
+                                        value: formData.telefone,
+                                        onChange: (e) => setFormData({ ...formData, telefone: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '(88) 99999-9999'
+                                    })
+                                ])
+                            ]),
+
+                            // Endereço e Bairro
+                            React.createElement('div', {
+                                key: 'endereco-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'endereco' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Endereço *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.endereco,
+                                        onChange: (e) => setFormData({ ...formData, endereco: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Rua, número'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'bairro' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Bairro *'),
+                                    React.createElement('select', {
+                                        key: 'select',
+                                        required: true,
+                                        value: formData.bairro,
+                                        onChange: (e) => setFormData({ ...formData, bairro: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    }, [
+                                        React.createElement('option', { key: 'default', value: '' }, 'Selecione o bairro'),
+                                        ...bairros.map(bairro =>
+                                            React.createElement('option', { key: bairro, value: bairro }, bairro)
+                                        )
+                                    ])
+                                ])
+                            ]),
+
+                            // Veículo e Placa
+                            React.createElement('div', {
+                                key: 'veiculo-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'veiculo' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Veículo *'),
+                                    React.createElement('select', {
+                                        key: 'select',
+                                        required: true,
+                                        value: formData.veiculo,
+                                        onChange: (e) => setFormData({ ...formData, veiculo: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    }, [
+                                        React.createElement('option', { key: 'default', value: '' }, 'Selecione o veículo'),
+                                        ...tiposVeiculo.map(veiculo =>
+                                            React.createElement('option', { key: veiculo, value: veiculo }, veiculo)
+                                        )
+                                    ])
+                                ]),
+                                React.createElement('div', { key: 'placa' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Placa *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.placa,
+                                        onChange: (e) => setFormData({ ...formData, placa: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'ABC-1234'
+                                    })
+                                ])
+                            ]),
+
+                            // CNH
+                            React.createElement('div', {
+                                key: 'cnh-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'CNH *'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'text',
+                                    required: true,
+                                    value: formData.cnh,
+                                    onChange: (e) => setFormData({ ...formData, cnh: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: 'Número da CNH'
+                                })
+                            ]),
+
+                            // Senhas
+                            React.createElement('div', {
+                                key: 'senha-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'senha' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Senha *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'password',
+                                        required: true,
+                                        value: formData.senha,
+                                        onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Mínimo 6 caracteres'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'confirmar' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Confirmar Senha *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'password',
+                                        required: true,
+                                        value: formData.confirmarSenha,
+                                        onChange: (e) => setFormData({ ...formData, confirmarSenha: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Repita a senha'
+                                    })
+                                ])
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center'
+                            }, error),
+
+                            React.createElement('div', {
+                                key: 'buttons',
+                                className: 'flex space-x-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    type: 'button',
+                                    onClick: () => setCurrentView('home'),
+                                    className: 'flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                                }, 'Voltar'),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: 'flex-1 bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition duration-200'
+                                }, 'Cadastrar Entregador')
+                            ])
+                        ])
+                    ])
+                );
+            };
+            // Formulário de Cadastro de Consumidor
+            const CadastroConsumidor = () => {
+                const [formData, setFormData] = useState({
+                    nome: '',
+                    cpf: '',
+                    email: '',
+                    telefone: '',
+                    endereco: '',
+                    bairro: '',
+                    pontoReferencia: '',
+                    senha: '',
+                    confirmarSenha: ''
+                });
+                const [error, setError] = useState('');
+                const [success, setSuccess] = useState('');
+
+                const bairros = [
+                    'Centro', 'Dom Expedito', 'Sinhá Sabóia', 'Junco', 'Pedrinhas',
+                    'Parque Silvana', 'Alto da Brasília', 'Cohab', 'Outros'
+                ];
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    setError('');
+
+                    // Validações
+                    if (formData.senha !== formData.confirmarSenha) {
+                        setError('As senhas não coincidem');
+                        return;
+                    }
+
+                    if (formData.senha.length < 6) {
+                        setError('A senha deve ter pelo menos 6 caracteres');
+                        return;
+                    }
+
+                    if (consumidores.find(cons => cons.email === formData.email)) {
+                        setError('Este email já está cadastrado');
+                        return;
+                    }
+
+                    if (consumidores.find(cons => cons.cpf === formData.cpf)) {
+                        setError('Este CPF já está cadastrado');
+                        return;
+                    }
+
+                    // Criar novo consumidor
+                    const novoConsumidor = {
+                        id: 'cons_' + Date.now(),
+                        ...formData,
+                        cadastradoEm: new Date().toLocaleString('pt-BR')
+                    };
+                    delete novoConsumidor.confirmarSenha;
+
+                    setConsumidores([...consumidores, novoConsumidor]);
+                    setSuccess('Consumidor cadastrado com sucesso! Você já pode fazer login.');
+
+                    // Limpar formulário
+                    setFormData({
+                        nome: '', cpf: '', email: '', telefone: '', endereco: '', bairro: '',
+                        pontoReferencia: '', senha: '', confirmarSenha: ''
+                    });
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, '👤 Cadastro de Cliente'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Cadastre-se para fazer pedidos')
+                        ]),
+
+                        success && React.createElement('div', {
+                            key: 'success',
+                            className: 'mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md'
+                        }, success),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            // Nome e CPF
+                            React.createElement('div', {
+                                key: 'nome-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'nome' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Nome Completo *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.nome,
+                                        onChange: (e) => setFormData({ ...formData, nome: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Maria Silva Santos'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'cpf' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'CPF *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.cpf,
+                                        onChange: (e) => setFormData({ ...formData, cpf: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '000.000.000-00'
+                                    })
+                                ])
+                            ]),
+
+                            // Email e Telefone
+                            React.createElement('div', {
+                                key: 'contato-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'email' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Email *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'email',
+                                        required: true,
+                                        value: formData.email,
+                                        onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'cliente@email.com'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'telefone' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Telefone *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'tel',
+                                        required: true,
+                                        value: formData.telefone,
+                                        onChange: (e) => setFormData({ ...formData, telefone: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: '(88) 99999-9999'
+                                    })
+                                ])
+                            ]),
+
+                            // Endereço e Bairro
+                            React.createElement('div', {
+                                key: 'endereco-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'endereco' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Endereço *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'text',
+                                        required: true,
+                                        value: formData.endereco,
+                                        onChange: (e) => setFormData({ ...formData, endereco: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Rua, número'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'bairro' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Bairro *'),
+                                    React.createElement('select', {
+                                        key: 'select',
+                                        required: true,
+                                        value: formData.bairro,
+                                        onChange: (e) => setFormData({ ...formData, bairro: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    }, [
+                                        React.createElement('option', { key: 'default', value: '' }, 'Selecione o bairro'),
+                                        ...bairros.map(bairro =>
+                                            React.createElement('option', { key: bairro, value: bairro }, bairro)
+                                        )
+                                    ])
+                                ])
+                            ]),
+
+                            // Ponto de Referência
+                            React.createElement('div', {
+                                key: 'referencia-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Ponto de Referência'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'text',
+                                    value: formData.pontoReferencia,
+                                    onChange: (e) => setFormData({ ...formData, pontoReferencia: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: 'Ex: Próximo ao mercado São João'
+                                })
+                            ]),
+
+                            // Senhas
+                            React.createElement('div', {
+                                key: 'senha-field',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                            }, [
+                                React.createElement('div', { key: 'senha' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Senha *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'password',
+                                        required: true,
+                                        value: formData.senha,
+                                        onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Mínimo 6 caracteres'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'confirmar' }, [
+                                    React.createElement('label', {
+                                        key: 'label',
+                                        className: 'block text-sm font-medium text-gray-700 mb-2'
+                                    }, 'Confirmar Senha *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'password',
+                                        required: true,
+                                        value: formData.confirmarSenha,
+                                        onChange: (e) => setFormData({ ...formData, confirmarSenha: e.target.value }),
+                                        className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                        placeholder: 'Repita a senha'
+                                    })
+                                ])
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center'
+                            }, error),
+
+                            React.createElement('div', {
+                                key: 'buttons',
+                                className: 'flex space-x-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    type: 'button',
+                                    onClick: () => setCurrentView('home'),
+                                    className: 'flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                                }, 'Voltar'),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: 'flex-1 bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-200'
+                                }, 'Cadastrar Cliente')
+                            ])
+                        ])
+                    ])
+                );
+            };
+            // Componente de Login
+            const LoginForm = () => {
+                const [formData, setFormData] = useState({
+                    email: '',
+                    senha: '',
+                    tipo: 'consumidor'
+                });
+                const [error, setError] = useState('');
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+
+                    let user = null;
+
+                    if (formData.tipo === 'admin') {
+                        user = admins.find(u => u.email === formData.email && u.senha === formData.senha);
+                    } else if (formData.tipo === 'entregador') {
+                        user = users.find(u => u.email === formData.email && u.senha === formData.senha);
+                    } else if (formData.tipo === 'empresa') {
+                        user = empresas.find(u => u.email === formData.email && u.senha === formData.senha);
+                    } else if (formData.tipo === 'consumidor') {
+                        user = consumidores.find(u => u.email === formData.email && u.senha === formData.senha);
+                    }
+
+                    if (user) {
+                        if (user.status && user.status === 'pendente') {
+                            setError('Sua conta ainda está aguardando aprovação');
+                            return;
+                        }
+                        setCurrentUser(user);
+                        setCurrentView('dashboard');
+                        setError('');
+                    } else {
+                        setError('Email ou senha incorretos');
+                    }
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Login'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Faça login para continuar')
+                        ]),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'tipo-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'tipo-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Tipo de Usuário'),
+                                React.createElement('select', {
+                                    key: 'tipo-select',
+                                    value: formData.tipo,
+                                    onChange: (e) => setFormData({ ...formData, tipo: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                }, [
+                                    React.createElement('option', {
+                                        key: 'consumidor',
+                                        value: 'consumidor'
+                                    }, '👤 Cliente'),
+                                    React.createElement('option', {
+                                        key: 'empresa',
+                                        value: 'empresa'
+                                    }, '🏢 Empresa'),
+                                    React.createElement('option', {
+                                        key: 'entregador',
+                                        value: 'entregador'
+                                    }, '🏍️ Entregador'),
+                                    React.createElement('option', {
+                                        key: 'admin',
+                                        value: 'admin'
+                                    }, '👨‍💼 Administrador')
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'email-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'email-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, formData.tipo === 'admin' ? 'Usuário' : 'Email'),
+                                React.createElement('input', {
+                                    key: 'email-input',
+                                    type: formData.tipo === 'admin' ? 'text' : 'email',
+                                    required: true,
+                                    value: formData.email,
+                                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: formData.tipo === 'admin' ? 'admin' : 'seu@email.com'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'senha-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'senha-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Senha'),
+                                React.createElement('input', {
+                                    key: 'senha-input',
+                                    type: 'password',
+                                    required: true,
+                                    value: formData.senha,
+                                    onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                })
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center'
+                            }, error),
+
+                            React.createElement('div', {
+                                key: 'buttons',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: 'w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200'
+                                }, 'Entrar'),
+                                React.createElement('button', {
+                                    key: 'voltar',
+                                    type: 'button',
+                                    onClick: () => setCurrentView('home'),
+                                    className: 'w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200'
+                                }, 'Voltar')
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'site-info',
+                            className: 'mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200 text-sm text-center'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-3xl mb-2'
+                            }, '� '),
+                            React.createElement('p', {
+                                key: 'title',
+                                className: 'font-semibold text-blue-800 mb-2'
+                            }, 'Sistema Entrega Sobral'),
+                            React.createElement('p', {
+                                key: 'description',
+                                className: 'text-gray-700'
+                            }, 'Conectando empresas, entregadores e clientes em Sobral-CE. Faça parte da maior plataforma de delivery da região!')
+                        ])
+                    ])
+                );
+            };
+
+            // Dashboard do Consumidor
+            const ConsumidorDashboard = () => {
+                const [activeTab, setActiveTab] = useState('marketplace');
+                const [carrinho, setCarrinho] = useState([]);
+                const meusPedidos = pedidos.filter(p => p.cliente === currentUser.nome);
+
+                const adicionarAoCarrinho = (item) => {
+                    setCarrinho([...carrinho, { ...item, quantidade: 1, id: Date.now() }]);
+                };
+
+                const removerDoCarrinho = (id) => {
+                    setCarrinho(carrinho.filter(item => item.id !== id));
+                };
+
+                const finalizarPedido = () => {
+                    if (carrinho.length === 0) {
+                        alert('Carrinho vazio!');
+                        return;
+                    }
+
+                    const novoPedido = {
+                        id: Date.now().toString(),
+                        cliente: currentUser.nome,
+                        endereco: `${currentUser.endereco} - ${currentUser.bairro}`,
+                        telefone: currentUser.telefone,
+                        valor: carrinho.reduce((sum, item) => sum + parseFloat(item.preco), 0),
+                        status: 'disponivel',
+                        items: carrinho.map(item => item.nome).join(', '),
+                        empresaId: carrinho[0].empresaId,
+                        empresaNome: carrinho[0].empresaNome,
+                        criadoEm: new Date().toLocaleString('pt-BR')
+                    };
+
+                    setPedidos([...pedidos, novoPedido]);
+                    setCarrinho([]);
+                    alert('Pedido realizado com sucesso!');
+                    setActiveTab('pedidos');
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    // Header
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('div', { key: 'user-info' }, [
+                                React.createElement('h1', {
+                                    key: 'welcome',
+                                    className: 'text-2xl font-bold text-gray-800'
+                                }, `Olá, ${currentUser.nome}! 👤`),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-gray-600'
+                                }, `${currentUser.endereco} - ${currentUser.bairro}`)
+                            ]),
+                            React.createElement('div', {
+                                key: 'actions',
+                                className: 'flex items-center space-x-4'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'carrinho',
+                                    className: 'relative'
+                                }, [
+                                    React.createElement('button', {
+                                        key: 'carrinho-btn',
+                                        onClick: () => setActiveTab('carrinho'),
+                                        className: 'bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200'
+                                    }, `🛒 Carrinho (${carrinho.length})`),
+                                ]),
+                                React.createElement('button', {
+                                    key: 'logout',
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('home');
+                                    },
+                                    className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                                }, 'Sair')
+                            ])
+                        ])
+                    ]),
+
+                    // Tabs
+                    React.createElement('div', {
+                        key: 'tabs',
+                        className: 'bg-white border-b'
+                    }, React.createElement('div', {
+                        className: 'max-w-6xl mx-auto'
+                    }, React.createElement('nav', {
+                        className: 'flex space-x-8'
+                    }, [
+                        React.createElement('button', {
+                            key: 'marketplace-tab',
+                            onClick: () => setActiveTab('marketplace'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'marketplace'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, '🛍️ Marketplace'),
+                        React.createElement('button', {
+                            key: 'carrinho-tab',
+                            onClick: () => setActiveTab('carrinho'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'carrinho'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, `🛒 Carrinho (${carrinho.length})`),
+                        React.createElement('button', {
+                            key: 'pedidos-tab',
+                            onClick: () => setActiveTab('pedidos'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'pedidos'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, `📦 Meus Pedidos (${meusPedidos.length})`)
+                    ]))),
+
+                    // Content
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        // Marketplace
+                        activeTab === 'marketplace' && React.createElement('div', {
+                            key: 'marketplace-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Restaurantes Disponíveis'),
+
+                            React.createElement('div', {
+                                key: 'empresas-list',
+                                className: 'grid gap-6 md:grid-cols-2 lg:grid-cols-3'
+                            }, empresas.filter(emp => emp.status === 'ativo').map(empresa =>
+                                React.createElement('div', {
+                                    key: empresa.id,
+                                    className: 'bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500'
+                                }, [
+                                    React.createElement('h3', {
+                                        key: 'nome',
+                                        className: 'text-xl font-bold text-gray-900 mb-2'
+                                    }, empresa.nome),
+                                    React.createElement('p', {
+                                        key: 'categoria',
+                                        className: 'text-sm text-gray-600 mb-2'
+                                    }, `📍 ${empresa.categoria}`),
+                                    React.createElement('p', {
+                                        key: 'endereco',
+                                        className: 'text-sm text-gray-600 mb-2'
+                                    }, empresa.endereco),
+                                    React.createElement('p', {
+                                        key: 'telefone',
+                                        className: 'text-sm text-gray-600 mb-4'
+                                    }, `📞 ${empresa.telefone}`),
+                                    React.createElement('div', {
+                                        key: 'info',
+                                        className: 'flex justify-between items-center mb-4'
+                                    }, [
+                                        React.createElement('span', {
+                                            key: 'taxa',
+                                            className: 'text-sm text-green-600'
+                                        }, `Taxa: R$ ${empresa.taxaEntrega || '5,00'}`),
+                                        React.createElement('span', {
+                                            key: 'tempo',
+                                            className: 'text-sm text-blue-600'
+                                        }, empresa.tempoEntrega || '30-45 min')
+                                    ]),
+                                    React.createElement('button', {
+                                        key: 'ver-cardapio',
+                                        onClick: () => {
+                                            // Simular produtos da empresa
+                                            const produtosEmpresa = [
+                                                { nome: 'Pizza Margherita', preco: '35.90', empresaId: empresa.id, empresaNome: empresa.nome },
+                                                { nome: 'Pizza Calabresa', preco: '32.50', empresaId: empresa.id, empresaNome: empresa.nome }
+                                            ];
+                                            produtosEmpresa.forEach(produto => {
+                                                adicionarAoCarrinho(produto);
+                                            });
+                                            alert(`Produtos de ${empresa.nome} adicionados ao carrinho!`);
+                                        },
+                                        className: 'w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200'
+                                    }, 'Ver Cardápio')
+                                ])
+                            ))
+                        ]),
+
+                        // Carrinho
+                        activeTab === 'carrinho' && React.createElement('div', {
+                            key: 'carrinho-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Meu Carrinho'),
+
+                            carrinho.length === 0 ?
+                                React.createElement('div', {
+                                    key: 'empty',
+                                    className: 'text-center py-12'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-6xl mb-4'
+                                    }, '🛒'),
+                                    React.createElement('p', {
+                                        key: 'message',
+                                        className: 'text-gray-500 text-lg'
+                                    }, 'Seu carrinho está vazio')
+                                ]) :
+                                React.createElement('div', {
+                                    key: 'items',
+                                    className: 'space-y-4'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'list',
+                                        className: 'space-y-4'
+                                    }, carrinho.map(item =>
+                                        React.createElement('div', {
+                                            key: item.id,
+                                            className: 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center'
+                                        }, [
+                                            React.createElement('div', { key: 'info' }, [
+                                                React.createElement('h4', {
+                                                    key: 'nome',
+                                                    className: 'font-semibold'
+                                                }, item.nome),
+                                                React.createElement('p', {
+                                                    key: 'empresa',
+                                                    className: 'text-sm text-gray-600'
+                                                }, item.empresaNome),
+                                                React.createElement('p', {
+                                                    key: 'preco',
+                                                    className: 'text-green-600 font-semibold'
+                                                }, `R$ ${item.preco}`)
+                                            ]),
+                                            React.createElement('button', {
+                                                key: 'remover',
+                                                onClick: () => removerDoCarrinho(item.id),
+                                                className: 'bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition duration-200'
+                                            }, 'Remover')
+                                        ])
+                                    )),
+                                    React.createElement('div', {
+                                        key: 'total',
+                                        className: 'bg-white p-4 rounded-lg shadow-md'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'total-info',
+                                            className: 'flex justify-between items-center mb-4'
+                                        }, [
+                                            React.createElement('span', {
+                                                key: 'label',
+                                                className: 'text-lg font-semibold'
+                                            }, 'Total:'),
+                                            React.createElement('span', {
+                                                key: 'value',
+                                                className: 'text-xl font-bold text-green-600'
+                                            }, `R$ ${carrinho.reduce((sum, item) => sum + parseFloat(item.preco), 0).toFixed(2)}`)
+                                        ]),
+                                        React.createElement('button', {
+                                            key: 'finalizar',
+                                            onClick: finalizarPedido,
+                                            className: 'w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-semibold'
+                                        }, 'Finalizar Pedido')
+                                    ])
+                                ])
+                        ]),
+
+                        // Meus Pedidos
+                        activeTab === 'pedidos' && React.createElement('div', {
+                            key: 'pedidos-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Meus Pedidos'),
+
+                            meusPedidos.length === 0 ?
+                                React.createElement('div', {
+                                    key: 'no-pedidos',
+                                    className: 'text-center py-12'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-6xl mb-4'
+                                    }, '📦'),
+                                    React.createElement('p', {
+                                        key: 'message',
+                                        className: 'text-gray-500 text-lg'
+                                    }, 'Você ainda não fez nenhum pedido')
+                                ]) :
+                                React.createElement('div', {
+                                    key: 'pedidos-list',
+                                    className: 'grid gap-6 md:grid-cols-2 lg:grid-cols-3'
+                                }, meusPedidos.map(pedido =>
+                                    React.createElement('div', {
+                                        key: pedido.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'header',
+                                            className: 'flex justify-between items-start mb-4'
+                                        }, [
+                                            React.createElement('h4', {
+                                                key: 'id',
+                                                className: 'font-semibold text-lg text-gray-900'
+                                            }, `Pedido #${pedido.id.slice(-6)}`),
+                                            React.createElement('span', {
+                                                key: 'status',
+                                                className: `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${pedido.status === 'disponivel' ? 'bg-yellow-100 text-yellow-800' :
+                                                    pedido.status === 'aceito' ? 'bg-blue-100 text-blue-800' :
+                                                        pedido.status === 'preparando' ? 'bg-orange-100 text-orange-800' :
+                                                            pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                                pedido.status === 'entrega' ? 'bg-purple-100 text-purple-800' :
+                                                                    pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
+                                                                        'bg-gray-100 text-gray-800'
+                                                    }`
+                                            }, pedido.status.charAt(0).toUpperCase() + pedido.status.slice(1))
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'details',
+                                            className: 'space-y-2 mb-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'empresa',
+                                                className: 'text-sm text-gray-600'
+                                            }, `🏢 ${pedido.empresaNome}`),
+                                            React.createElement('p', {
+                                                key: 'items',
+                                                className: 'text-sm text-gray-600'
+                                            }, `🍕 ${pedido.items}`),
+                                            React.createElement('p', {
+                                                key: 'valor',
+                                                className: 'text-lg font-semibold text-green-600'
+                                            }, `💰 R$ ${pedido.valor.toFixed(2)}`),
+                                            React.createElement('p', {
+                                                key: 'data',
+                                                className: 'text-xs text-gray-500'
+                                            }, `📅 ${pedido.criadoEm}`)
+                                        ])
+                                    ])
+                                ))
+                        ])
+                    ])
+                ]);
+            };
+            // Dashboard da Empresa (do arquivo anterior)
+            const EmpresaDashboard = () => {
+                const [activeTab, setActiveTab] = useState('pedidos');
+                const meusPedidos = pedidos.filter(p => p.empresaId === currentUser.id);
+
+                const aceitarPedido = (pedidoId) => {
+                    setPedidos(pedidos.map(p =>
+                        p.id === pedidoId
+                            ? { ...p, status: 'preparando', aceitoEm: new Date().toLocaleString('pt-BR') }
+                            : p
+                    ));
+                };
+
+                const marcarPronto = (pedidoId) => {
+                    setPedidos(pedidos.map(p =>
+                        p.id === pedidoId
+                            ? { ...p, status: 'pronto', prontoEm: new Date().toLocaleString('pt-BR') }
+                            : p
+                    ));
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    // Header
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('div', { key: 'user-info' }, [
+                                React.createElement('h1', {
+                                    key: 'welcome',
+                                    className: 'text-2xl font-bold text-gray-800'
+                                }, `Bem-vindo, ${currentUser.nome}! 🏢`),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-gray-600'
+                                }, `${currentUser.categoria} | ${currentUser.endereco}`)
+                            ]),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: () => {
+                                    setCurrentUser(null);
+                                    setCurrentView('home');
+                                },
+                                className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                            }, 'Sair')
+                        ])
+                    ]),
+
+                    // Tabs
+                    React.createElement('div', {
+                        key: 'tabs',
+                        className: 'bg-white border-b'
+                    }, React.createElement('div', {
+                        className: 'max-w-6xl mx-auto'
+                    }, React.createElement('nav', {
+                        className: 'flex space-x-8'
+                    }, [
+                        React.createElement('button', {
+                            key: 'pedidos-tab',
+                            onClick: () => setActiveTab('pedidos'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'pedidos'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, `📦 Pedidos (${meusPedidos.length})`),
+                        React.createElement('button', {
+                            key: 'produtos-tab',
+                            onClick: () => setActiveTab('produtos'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'produtos'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, '🍕 Produtos'),
+                        React.createElement('button', {
+                            key: 'estatisticas-tab',
+                            onClick: () => setActiveTab('estatisticas'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'estatisticas'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, '📊 Estatísticas')
+                    ]))),
+
+                    // Content
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        // Aba de Pedidos
+                        activeTab === 'pedidos' && React.createElement('div', {
+                            key: 'pedidos-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Meus Pedidos'),
+
+                            meusPedidos.length === 0 ?
+                                React.createElement('div', {
+                                    key: 'no-pedidos',
+                                    className: 'text-center py-12'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-6xl mb-4'
+                                    }, '📦'),
+                                    React.createElement('p', {
+                                        key: 'message',
+                                        className: 'text-gray-500 text-lg'
+                                    }, 'Nenhum pedido encontrado')
+                                ]) :
+                                React.createElement('div', {
+                                    key: 'pedidos-list',
+                                    className: 'grid gap-6 md:grid-cols-2 lg:grid-cols-3'
+                                }, meusPedidos.map(pedido =>
+                                    React.createElement('div', {
+                                        key: pedido.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'header',
+                                            className: 'flex justify-between items-start mb-4'
+                                        }, [
+                                            React.createElement('div', { key: 'info' }, [
+                                                React.createElement('h4', {
+                                                    key: 'cliente',
+                                                    className: 'font-semibold text-lg text-gray-900'
+                                                }, pedido.cliente),
+                                                React.createElement('p', {
+                                                    key: 'id',
+                                                    className: 'text-sm text-gray-600'
+                                                }, `Pedido #${pedido.id}`)
+                                            ]),
+                                            React.createElement('span', {
+                                                key: 'status',
+                                                className: `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${pedido.status === 'disponivel' ? 'bg-yellow-100 text-yellow-800' :
+                                                    pedido.status === 'aceito' ? 'bg-blue-100 text-blue-800' :
+                                                        pedido.status === 'preparando' ? 'bg-orange-100 text-orange-800' :
+                                                            pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                    }`
+                                            }, pedido.status.charAt(0).toUpperCase() + pedido.status.slice(1))
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'details',
+                                            className: 'space-y-2 mb-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'endereco',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📍 ${pedido.endereco}`),
+                                            React.createElement('p', {
+                                                key: 'telefone',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📞 ${pedido.telefone}`),
+                                            React.createElement('p', {
+                                                key: 'items',
+                                                className: 'text-sm text-gray-600'
+                                            }, `🍕 ${pedido.items}`),
+                                            React.createElement('p', {
+                                                key: 'valor',
+                                                className: 'text-lg font-semibold text-green-600'
+                                            }, `💰 R$ ${pedido.valor.toFixed(2)}`)
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'actions',
+                                            className: 'flex space-x-2'
+                                        }, [
+                                            pedido.status === 'disponivel' && React.createElement('button', {
+                                                key: 'aceitar',
+                                                onClick: () => aceitarPedido(pedido.id),
+                                                className: 'flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200 text-sm'
+                                            }, 'Aceitar'),
+                                            pedido.status === 'preparando' && React.createElement('button', {
+                                                key: 'pronto',
+                                                onClick: () => marcarPronto(pedido.id),
+                                                className: 'flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200 text-sm'
+                                            }, 'Marcar Pronto')
+                                        ])
+                                    ])
+                                ))
+                        ]),
+
+                        // Aba de Produtos
+                        activeTab === 'produtos' && React.createElement('div', {
+                            key: 'produtos-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Gerenciar Produtos'),
+                            React.createElement('div', {
+                                key: 'add-produto',
+                                className: 'bg-white p-6 rounded-lg shadow-md'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'subtitle',
+                                    className: 'text-lg font-semibold mb-4'
+                                }, 'Adicionar Novo Produto'),
+                                React.createElement('p', {
+                                    key: 'message',
+                                    className: 'text-gray-600'
+                                }, 'Funcionalidade de produtos será implementada em breve.')
+                            ])
+                        ]),
+
+                        // Aba de Estatísticas
+                        activeTab === 'estatisticas' && React.createElement('div', {
+                            key: 'estatisticas-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Estatísticas'),
+                            React.createElement('div', {
+                                key: 'stats',
+                                className: 'grid gap-6 md:grid-cols-3'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'total-pedidos',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '📦'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, meusPedidos.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Total de Pedidos')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'faturamento',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '💰'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-green-600'
+                                    }, `R$ ${meusPedidos.reduce((sum, p) => sum + p.valor, 0).toFixed(2)}`),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Faturamento Total')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'ticket-medio',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '📊'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-blue-600'
+                                    }, meusPedidos.length > 0 ? `R$ ${(meusPedidos.reduce((sum, p) => sum + p.valor, 0) / meusPedidos.length).toFixed(2)}` : 'R$ 0,00'),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Ticket Médio')
+                                ])
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+
+            // Dashboard do Entregador (do arquivo anterior)
+            const EntregadorDashboard = () => {
+                const [activeTab, setActiveTab] = useState('disponivel');
+                const pedidosDisponiveis = pedidos.filter(p => p.status === 'pronto' && !p.entregadorId);
+                const meusPedidos = pedidos.filter(p => p.entregadorId === currentUser.id);
+
+                const aceitarEntrega = (pedidoId) => {
+                    setPedidos(pedidos.map(p =>
+                        p.id === pedidoId
+                            ? {
+                                ...p,
+                                status: 'entrega',
+                                entregadorId: currentUser.id,
+                                aceitoEntregaEm: new Date().toLocaleString('pt-BR')
+                            }
+                            : p
+                    ));
+                };
+
+                const marcarEntregue = (pedidoId) => {
+                    setPedidos(pedidos.map(p =>
+                        p.id === pedidoId
+                            ? { ...p, status: 'entregue', entregueEm: new Date().toLocaleString('pt-BR') }
+                            : p
+                    ));
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    // Header
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('div', { key: 'user-info' }, [
+                                React.createElement('h1', {
+                                    key: 'welcome',
+                                    className: 'text-2xl font-bold text-gray-800'
+                                }, `Bem-vindo, ${currentUser.nome}! 🏍️`),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-gray-600'
+                                }, `${currentUser.veiculo} | Total de entregas: ${currentUser.totalEntregas || 0}`)
+                            ]),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: () => {
+                                    setCurrentUser(null);
+                                    setCurrentView('home');
+                                },
+                                className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                            }, 'Sair')
+                        ])
+                    ]),
+
+                    // Tabs
+                    React.createElement('div', {
+                        key: 'tabs',
+                        className: 'bg-white border-b'
+                    }, React.createElement('div', {
+                        className: 'max-w-6xl mx-auto'
+                    }, React.createElement('nav', {
+                        className: 'flex space-x-8'
+                    }, [
+                        React.createElement('button', {
+                            key: 'disponivel-tab',
+                            onClick: () => setActiveTab('disponivel'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'disponivel'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, `🚚 Disponíveis (${pedidosDisponiveis.length})`),
+                        React.createElement('button', {
+                            key: 'minhas-tab',
+                            onClick: () => setActiveTab('minhas'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'minhas'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, `📦 Minhas Entregas (${meusPedidos.length})`)
+                    ]))),
+
+                    // Content
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        // Aba de Pedidos Disponíveis
+                        activeTab === 'disponivel' && React.createElement('div', {
+                            key: 'disponivel-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Entregas Disponíveis'),
+
+                            pedidosDisponiveis.length === 0 ?
+                                React.createElement('div', {
+                                    key: 'no-pedidos',
+                                    className: 'text-center py-12'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-6xl mb-4'
+                                    }, '🏍️'),
+                                    React.createElement('p', {
+                                        key: 'message',
+                                        className: 'text-gray-500 text-lg'
+                                    }, 'Nenhuma entrega disponível no momento')
+                                ]) :
+                                React.createElement('div', {
+                                    key: 'pedidos-list',
+                                    className: 'grid gap-6 md:grid-cols-2 lg:grid-cols-3'
+                                }, pedidosDisponiveis.map(pedido =>
+                                    React.createElement('div', {
+                                        key: pedido.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'header',
+                                            className: 'mb-4'
+                                        }, [
+                                            React.createElement('h4', {
+                                                key: 'cliente',
+                                                className: 'font-semibold text-lg text-gray-900'
+                                            }, pedido.cliente),
+                                            React.createElement('p', {
+                                                key: 'empresa',
+                                                className: 'text-sm text-gray-600'
+                                            }, `🏢 ${pedido.empresaNome}`)
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'details',
+                                            className: 'space-y-2 mb-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'endereco',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📍 ${pedido.endereco}`),
+                                            React.createElement('p', {
+                                                key: 'telefone',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📞 ${pedido.telefone}`),
+                                            React.createElement('p', {
+                                                key: 'valor',
+                                                className: 'text-lg font-semibold text-green-600'
+                                            }, `💰 R$ ${pedido.valor.toFixed(2)}`)
+                                        ]),
+
+                                        React.createElement('button', {
+                                            key: 'aceitar',
+                                            onClick: () => aceitarEntrega(pedido.id),
+                                            className: 'w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200'
+                                        }, 'Aceitar Entrega')
+                                    ])
+                                ))
+                        ]),
+
+                        // Aba de Minhas Entregas
+                        activeTab === 'minhas' && React.createElement('div', {
+                            key: 'minhas-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Minhas Entregas'),
+
+                            meusPedidos.length === 0 ?
+                                React.createElement('div', {
+                                    key: 'no-pedidos',
+                                    className: 'text-center py-12'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-6xl mb-4'
+                                    }, '📦'),
+                                    React.createElement('p', {
+                                        key: 'message',
+                                        className: 'text-gray-500 text-lg'
+                                    }, 'Você ainda não tem entregas')
+                                ]) :
+                                React.createElement('div', {
+                                    key: 'pedidos-list',
+                                    className: 'grid gap-6 md:grid-cols-2 lg:grid-cols-3'
+                                }, meusPedidos.map(pedido =>
+                                    React.createElement('div', {
+                                        key: pedido.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'header',
+                                            className: 'flex justify-between items-start mb-4'
+                                        }, [
+                                            React.createElement('div', { key: 'info' }, [
+                                                React.createElement('h4', {
+                                                    key: 'cliente',
+                                                    className: 'font-semibold text-lg text-gray-900'
+                                                }, pedido.cliente),
+                                                React.createElement('p', {
+                                                    key: 'empresa',
+                                                    className: 'text-sm text-gray-600'
+                                                }, `🏢 ${pedido.empresaNome}`)
+                                            ]),
+                                            React.createElement('span', {
+                                                key: 'status',
+                                                className: `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${pedido.status === 'entrega' ? 'bg-orange-100 text-orange-800' :
+                                                    pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`
+                                            }, pedido.status === 'entrega' ? 'Em Entrega' : 'Entregue')
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'details',
+                                            className: 'space-y-2 mb-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'endereco',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📍 ${pedido.endereco}`),
+                                            React.createElement('p', {
+                                                key: 'telefone',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📞 ${pedido.telefone}`),
+                                            React.createElement('p', {
+                                                key: 'valor',
+                                                className: 'text-lg font-semibold text-green-600'
+                                            }, `💰 R$ ${pedido.valor.toFixed(2)}`)
+                                        ]),
+
+                                        pedido.status === 'entrega' && React.createElement('button', {
+                                            key: 'entregar',
+                                            onClick: () => marcarEntregue(pedido.id),
+                                            className: 'w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200'
+                                        }, 'Marcar como Entregue')
+                                    ])
+                                ))
+                        ])
+                    ])
+                ]);
+            };
+
+            // Dashboard do Admin (simplificado)
+            const AdminDashboard = () => {
+                const [activeTab, setActiveTab] = useState('overview');
+                const empresasPendentes = empresas.filter(e => e.status === 'pendente');
+                const entregadoresPendentes = users.filter(u => u.status === 'pendente');
+
+                const aprovarEmpresa = (id) => {
+                    setEmpresas(empresas.map(e =>
+                        e.id === id ? { ...e, status: 'ativo', aprovadaEm: new Date().toLocaleString('pt-BR') } : e
+                    ));
+                };
+
+                const aprovarEntregador = (id) => {
+                    setUsers(users.map(u =>
+                        u.id === id ? { ...u, status: 'ativo', aprovadoEm: new Date().toLocaleString('pt-BR') } : u
+                    ));
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, 'Painel Administrativo 👨‍💼'),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: () => {
+                                    setCurrentUser(null);
+                                    setCurrentView('home');
+                                },
+                                className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                            }, 'Sair')
+                        ])
+                    ]),
+
+                    // Tabs
+                    React.createElement('div', {
+                        key: 'tabs',
+                        className: 'bg-white border-b'
+                    }, React.createElement('div', {
+                        className: 'max-w-6xl mx-auto'
+                    }, React.createElement('nav', {
+                        className: 'flex space-x-8'
+                    }, [
+                        React.createElement('button', {
+                            key: 'overview-tab',
+                            onClick: () => setActiveTab('overview'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, '📊 Visão Geral'),
+                        React.createElement('button', {
+                            key: 'aprovacoes-tab',
+                            onClick: () => setActiveTab('aprovacoes'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'aprovacoes'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                        }, `✅ Aprovações (${empresasPendentes.length + entregadoresPendentes.length})`)
+                    ]))),
+
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        // Overview
+                        activeTab === 'overview' && React.createElement('div', {
+                            key: 'overview-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'stats',
+                                className: 'grid gap-6 md:grid-cols-4'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'empresas',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '🏢'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, empresas.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Empresas')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'entregadores',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '🏍️'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, users.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Entregadores')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'consumidores',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '👤'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, consumidores.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Clientes')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'pedidos',
+                                    className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-4xl mb-2'
+                                    }, '📦'),
+                                    React.createElement('h3', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-gray-900'
+                                    }, pedidos.length),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-gray-600'
+                                    }, 'Pedidos')
+                                ])
+                            ]),
+                            React.createElement('div', {
+                                key: 'message',
+                                className: 'bg-white p-6 rounded-lg shadow-md text-center'
+                            }, [
+                                React.createElement('h2', {
+                                    key: 'title',
+                                    className: 'text-xl font-bold text-gray-900 mb-2'
+                                }, '✅ Sistema funcionando corretamente!'),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-gray-600'
+                                }, 'Logado como: Administrador')
+                            ])
+                        ]),
+
+                        // Aprovações
+                        activeTab === 'aprovacoes' && React.createElement('div', {
+                            key: 'aprovacoes-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Aprovações Pendentes'),
+
+                            // Empresas pendentes
+                            empresasPendentes.length > 0 && React.createElement('div', {
+                                key: 'empresas-pendentes',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'subtitle',
+                                    className: 'text-lg font-semibold text-gray-800'
+                                }, `🏢 Empresas (${empresasPendentes.length})`),
+                                React.createElement('div', {
+                                    key: 'list',
+                                    className: 'grid gap-4 md:grid-cols-2'
+                                }, empresasPendentes.map(empresa =>
+                                    React.createElement('div', {
+                                        key: empresa.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border border-yellow-200'
+                                    }, [
+                                        React.createElement('h4', {
+                                            key: 'nome',
+                                            className: 'font-semibold text-lg text-gray-900 mb-2'
+                                        }, empresa.nome),
+                                        React.createElement('p', {
+                                            key: 'categoria',
+                                            className: 'text-sm text-gray-600 mb-1'
+                                        }, `Categoria: ${empresa.categoria}`),
+                                        React.createElement('p', {
+                                            key: 'responsavel',
+                                            className: 'text-sm text-gray-600 mb-1'
+                                        }, `Responsável: ${empresa.responsavel}`),
+                                        React.createElement('p', {
+                                            key: 'email',
+                                            className: 'text-sm text-gray-600 mb-4'
+                                        }, `Email: ${empresa.email}`),
+                                        React.createElement('div', {
+                                            key: 'actions',
+                                            className: 'flex space-x-2'
+                                        }, [
+                                            React.createElement('button', {
+                                                key: 'aprovar',
+                                                onClick: () => aprovarEmpresa(empresa.id),
+                                                className: 'flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200 text-sm'
+                                            }, 'Aprovar'),
+                                            React.createElement('button', {
+                                                key: 'rejeitar',
+                                                onClick: () => {
+                                                    if (confirm('Tem certeza que deseja rejeitar esta empresa?')) {
+                                                        setEmpresas(empresas.filter(e => e.id !== empresa.id));
+                                                    }
+                                                },
+                                                className: 'flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition duration-200 text-sm'
+                                            }, 'Rejeitar')
+                                        ])
+                                    ])
+                                ))
+                            ]),
+
+                            // Entregadores pendentes
+                            entregadoresPendentes.length > 0 && React.createElement('div', {
+                                key: 'entregadores-pendentes',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'subtitle',
+                                    className: 'text-lg font-semibold text-gray-800'
+                                }, `🏍️ Entregadores (${entregadoresPendentes.length})`),
+                                React.createElement('div', {
+                                    key: 'list',
+                                    className: 'grid gap-4 md:grid-cols-2'
+                                }, entregadoresPendentes.map(entregador =>
+                                    React.createElement('div', {
+                                        key: entregador.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border border-yellow-200'
+                                    }, [
+                                        React.createElement('h4', {
+                                            key: 'nome',
+                                            className: 'font-semibold text-lg text-gray-900 mb-2'
+                                        }, entregador.nome),
+                                        React.createElement('p', {
+                                            key: 'veiculo',
+                                            className: 'text-sm text-gray-600 mb-1'
+                                        }, `Veículo: ${entregador.veiculo}`),
+                                        React.createElement('p', {
+                                            key: 'placa',
+                                            className: 'text-sm text-gray-600 mb-1'
+                                        }, `Placa: ${entregador.placa}`),
+                                        React.createElement('p', {
+                                            key: 'email',
+                                            className: 'text-sm text-gray-600 mb-4'
+                                        }, `Email: ${entregador.email}`),
+                                        React.createElement('div', {
+                                            key: 'actions',
+                                            className: 'flex space-x-2'
+                                        }, [
+                                            React.createElement('button', {
+                                                key: 'aprovar',
+                                                onClick: () => aprovarEntregador(entregador.id),
+                                                className: 'flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200 text-sm'
+                                            }, 'Aprovar'),
+                                            React.createElement('button', {
+                                                key: 'rejeitar',
+                                                onClick: () => {
+                                                    if (confirm('Tem certeza que deseja rejeitar este entregador?')) {
+                                                        setUsers(users.filter(u => u.id !== entregador.id));
+                                                    }
+                                                },
+                                                className: 'flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition duration-200 text-sm'
+                                            }, 'Rejeitar')
+                                        ])
+                                    ])
+                                ))
+                            ]),
+
+                            // Mensagem quando não há aprovações pendentes
+                            empresasPendentes.length === 0 && entregadoresPendentes.length === 0 && React.createElement('div', {
+                                key: 'no-pending',
+                                className: 'text-center py-12'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'text-6xl mb-4'
+                                }, '✅'),
+                                React.createElement('p', {
+                                    key: 'message',
+                                    className: 'text-gray-500 text-lg'
+                                }, 'Nenhuma aprovação pendente')
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+
+            // Renderização principal
+            if (currentView === 'home') {
+                return React.createElement(HomeScreen);
+            } else if (currentView === 'login') {
+                return React.createElement(LoginForm);
+            } else if (currentView === 'cadastro-empresa') {
+                return React.createElement(CadastroEmpresa);
+            } else if (currentView === 'cadastro-entregador') {
+                return React.createElement(CadastroEntregador);
+            } else if (currentView === 'cadastro-consumidor') {
+                return React.createElement(CadastroConsumidor);
+            } else if (currentView === 'dashboard') {
+                if (currentUser.tipo === 'empresa') {
+                    return React.createElement(EmpresaDashboard);
+                } else if (currentUser.tipo === 'entregador') {
+                    return React.createElement(EntregadorDashboard);
+                } else if (currentUser.tipo === 'admin') {
+                    return React.createElement(AdminDashboard);
+                } else {
+                    return React.createElement(ConsumidorDashboard);
+                }
+            }
+
+            return React.createElement('div', {
+                className: 'min-h-screen bg-gray-100 flex items-center justify-center'
+            }, React.createElement('p', {
+                className: 'text-gray-500'
+            }, 'Carregando...'));
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+
+</html>

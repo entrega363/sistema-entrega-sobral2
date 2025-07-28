@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Enterprise v5</title>
+    <meta name="description" content="Sistema enterprise de delivery com integrações reais, WhatsApp Business, GPS tracking e analytics avançados">
+    <meta name="theme-color" content="#1f2937">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNpc3RlbWEgRW50cmVnYSBTb2JyYWwgRW50ZXJwcmlzZSIsCiAgInNob3J0X25hbWUiOiAiRW50cmVnYSBTb2JyYWwgdjUiLAogICJkZXNjcmlwdGlvbiI6ICJTaXN0ZW1hIGVudGVycHJpc2UgZGUgZGVsaXZlcnkgY29tIGludGVncmHDp8O1ZXMgcmVhaXMiLAogICJzdGFydF91cmwiOiAiLi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMxZjI5MzciLAogICJ0aGVtZV9jb2xvciI6ICIjMWYyOTM3IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhkcFpIUm9QU0l5TkRBaUlHaGxhV2RvZEQwaU1qUXdJajQ4Y21WamRDQjNhV1IwYUQwaU1qUXdJaUJvWldsbmFIUTlJakkwTUNJZ1ptbHNiRDBpSXpGbU1qa3pOeUl2UGp3dmMzWm5JZz09IiwKICAgICAgInNpemVzIjogIjI0MHgyNDAiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+    
+    <!-- Socket.IO for real-time -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Date/Time utilities -->
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    
+    <style>
+        /* Enterprise theme */
+        :root {
+            --primary-color: #1f2937;
+            --secondary-color: #3b82f6;
+            --accent-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        
+        /* Advanced animations */
+        @keyframes slideInFromLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideInFromRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .slide-in-left { animation: slideInFromLeft 0.5s ease-out; }
+        .slide-in-right { animation: slideInFromRight 0.5s ease-out; }
+        .fade-in-up { animation: fadeInUp 0.6s ease-out; }
+        .pulse-animation { animation: pulse 2s infinite; }
+        
+        /* Enterprise components */
+        .enterprise-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Loading states */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Real-time indicators */
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .offline-indicator {
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+        
+        /* WhatsApp integration */
+        .whatsapp-button {
+            background: #25d366;
+            color: white;
+            border-radius: 50px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .whatsapp-button:hover {
+            background: #128c7e;
+            transform: scale(1.05);
+        }
+        
+        /* Advanced charts */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        /* GPS tracking */
+        .tracking-path {
+            stroke: #3b82f6;
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: 5,5;
+            animation: dash 1s linear infinite;
+        }
+        
+        @keyframes dash {
+            to { stroke-dashoffset: -10; }
+        }
+    </style>
+</head><b
+ody class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+    <div id="root"></div>
+    
+    <!-- Firebase Configuration -->
+    <script>
+        // Firebase config (demo - replace with real config)
+        const firebaseConfig = {
+            apiKey: "demo-api-key",
+            authDomain: "entrega-sobral.firebaseapp.com",
+            projectId: "entrega-sobral",
+            storageBucket: "entrega-sobral.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+        
+        // Initialize Firebase
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp(firebaseConfig);
+            window.db = firebase.firestore();
+            
+            // Initialize messaging for push notifications
+            if (firebase.messaging.isSupported()) {
+                window.messaging = firebase.messaging();
+            }
+        }
+    </script>
+
+    <script type="module">
+        import React, { useState, useEffect, useRef, useCallback } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Enterprise hooks and utilities
+        function useStoredState(key, initialValue) {
+            const [state, setState] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    return initialValue;
+                }
+            });
+
+            const setValue = useCallback((value) => {
+                try {
+                    setState(value);
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                    
+                    // Sync with Firebase if available
+                    if (window.db && typeof value === 'object' && value.id) {
+                        window.db.collection(key).doc(value.id).set(value).catch(console.error);
+                    }
+                    
+                    // Broadcast change
+                    window.dispatchEvent(new CustomEvent('storageUpdate', { 
+                        detail: { key, value } 
+                    }));
+                } catch (error) {
+                    console.error('Erro ao salvar:', error);
+                }
+            }, [key]);
+
+            return [state, setValue];
+        }
+
+        // Real-time GPS tracking hook
+        function useGPSTracking() {
+            const [position, setPosition] = useState(null);
+            const [tracking, setTracking] = useState(false);
+            const [error, setError] = useState(null);
+            const watchId = useRef(null);
+
+            const startTracking = useCallback(() => {
+                if (!navigator.geolocation) {
+                    setError('Geolocalização não suportada');
+                    return;
+                }
+
+                setTracking(true);
+                watchId.current = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        setPosition({
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                            accuracy: pos.coords.accuracy,
+                            timestamp: new Date().toISOString()
+                        });
+                        setError(null);
+                    },
+                    (err) => {
+                        setError(err.message);
+                        setTracking(false);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 60000
+                    }
+                );
+            }, []);
+
+            const stopTracking = useCallback(() => {
+                if (watchId.current) {
+                    navigator.geolocation.clearWatch(watchId.current);
+                    watchId.current = null;
+                }
+                setTracking(false);
+            }, []);
+
+            useEffect(() => {
+                return () => {
+                    if (watchId.current) {
+                        navigator.geolocation.clearWatch(watchId.current);
+                    }
+                };
+            }, []);
+
+            return { position, tracking, error, startTracking, stopTracking };
+        }
+
+        // WhatsApp Business integration hook
+        function useWhatsAppBusiness() {
+            const sendWhatsAppMessage = useCallback((phone, message) => {
+                const cleanPhone = phone.replace(/\D/g, '');
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodedMessage}`;
+                window.open(whatsappUrl, '_blank');
+            }, []);
+
+            const sendOrderNotification = useCallback((pedido) => {
+                const message = `🚚 *Entrega Sobral*\n\n` +
+                    `Olá ${pedido.cliente}!\n\n` +
+                    `Seu pedido #${pedido.id} foi confirmado:\n` +
+                    `📦 ${pedido.itemsTexto}\n` +
+                    `💰 Total: R$ ${pedido.valor.toFixed(2)}\n` +
+                    `📍 Endereço: ${pedido.endereco}\n` +
+                    `⏰ Tempo estimado: ${pedido.tempoEstimado}\n\n` +
+                    `Acompanhe seu pedido em tempo real!`;
+                
+                sendWhatsAppMessage(pedido.telefone, message);
+            }, [sendWhatsAppMessage]);
+
+            const sendDeliveryUpdate = useCallback((pedido, status) => {
+                const statusMessages = {
+                    'em_preparo': '👨‍🍳 Seu pedido está sendo preparado!',
+                    'pronto': '✅ Seu pedido está pronto e será entregue em breve!',
+                    'em_entrega': '🚚 Seu pedido saiu para entrega!',
+                    'entregue': '🎉 Pedido entregue com sucesso!'
+                };
+
+                const message = `🚚 *Entrega Sobral*\n\n` +
+                    `${statusMessages[status]}\n\n` +
+                    `Pedido #${pedido.id}\n` +
+                    `${pedido.entregadorNome ? `Entregador: ${pedido.entregadorNome}` : ''}`;
+                
+                sendWhatsAppMessage(pedido.telefone, message);
+            }, [sendWhatsAppMessage]);
+
+            return { sendWhatsAppMessage, sendOrderNotification, sendDeliveryUpdate };
+        }
+
+        // Advanced analytics hook
+        function useAnalytics() {
+            const [analytics, setAnalytics] = useStoredState('delivery_analytics', {
+                dailyStats: {},
+                monthlyStats: {},
+                userBehavior: {},
+                performanceMetrics: {}
+            });
+
+            const trackEvent = useCallback((event, data) => {
+                const today = new Date().toISOString().split('T')[0];
+                const month = today.substring(0, 7);
+
+                setAnalytics(prev => ({
+                    ...prev,
+                    dailyStats: {
+                        ...prev.dailyStats,
+                        [today]: {
+                            ...prev.dailyStats[today],
+                            [event]: (prev.dailyStats[today]?.[event] || 0) + 1
+                        }
+                    },
+                    monthlyStats: {
+                        ...prev.monthlyStats,
+                        [month]: {
+                            ...prev.monthlyStats[month],
+                            [event]: (prev.monthlyStats[month]?.[event] || 0) + 1
+                        }
+                    },
+                    userBehavior: {
+                        ...prev.userBehavior,
+                        lastEvent: { event, data, timestamp: new Date().toISOString() }
+                    }
+                }));
+            }, [setAnalytics]);
+
+            const getConversionRate = useCallback(() => {
+                const today = new Date().toISOString().split('T')[0];
+                const todayStats = analytics.dailyStats[today] || {};
+                const visits = todayStats.page_view || 0;
+                const orders = todayStats.order_created || 0;
+                return visits > 0 ? (orders / visits * 100).toFixed(2) : 0;
+            }, [analytics]);
+
+            const getAverageOrderValue = useCallback((pedidos) => {
+                if (!pedidos.length) return 0;
+                const total = pedidos.reduce((sum, p) => sum + p.valor, 0);
+                return (total / pedidos.length).toFixed(2);
+            }, []);
+
+            return { analytics, trackEvent, getConversionRate, getAverageOrderValue };
+        }
+
+        // PDF report generation hook
+        function usePDFReports() {
+            const generateOrderReport = useCallback((pedidos, periodo) => {
+                if (!window.jsPDF) {
+                    console.error('jsPDF não carregado');
+                    return;
+                }
+
+                const { jsPDF } = window.jsPDF;
+                const doc = new jsPDF();
+
+                // Header
+                doc.setFontSize(20);
+                doc.text('Sistema Entrega Sobral', 20, 20);
+                doc.setFontSize(14);
+                doc.text(`Relatório de Pedidos - ${periodo}`, 20, 30);
+                doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 40);
+
+                // Stats
+                const total = pedidos.length;
+                const faturamento = pedidos.reduce((sum, p) => sum + p.valor, 0);
+                const ticketMedio = total > 0 ? faturamento / total : 0;
+
+                doc.setFontSize(12);
+                doc.text(`Total de Pedidos: ${total}`, 20, 60);
+                doc.text(`Faturamento Total: R$ ${faturamento.toFixed(2)}`, 20, 70);
+                doc.text(`Ticket Médio: R$ ${ticketMedio.toFixed(2)}`, 20, 80);
+
+                // Table header
+                let y = 100;
+                doc.text('ID', 20, y);
+                doc.text('Cliente', 40, y);
+                doc.text('Valor', 100, y);
+                doc.text('Status', 130, y);
+                doc.text('Data', 160, y);
+
+                // Table data
+                pedidos.slice(0, 20).forEach((pedido, index) => {
+                    y += 10;
+                    doc.text(pedido.id.substring(0, 8), 20, y);
+                    doc.text(pedido.cliente.substring(0, 15), 40, y);
+                    doc.text(`R$ ${pedido.valor.toFixed(2)}`, 100, y);
+                    doc.text(pedido.status, 130, y);
+                    doc.text(new Date(pedido.criadoEm).toLocaleDateString('pt-BR'), 160, y);
+                });
+
+                // Save
+                doc.save(`relatorio-pedidos-${periodo}.pdf`);
+            }, []);
+
+            const generateFinancialReport = useCallback((empresas, pedidos) => {
+                if (!window.jsPDF) return;
+
+                const { jsPDF } = window.jsPDF;
+                const doc = new jsPDF();
+
+                doc.setFontSize(20);
+                doc.text('Relatório Financeiro', 20, 20);
+                doc.setFontSize(12);
+                doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 30);
+
+                let y = 50;
+                empresas.forEach(empresa => {
+                    const empresaPedidos = pedidos.filter(p => p.empresaId === empresa.id);
+                    const faturamento = empresaPedidos.reduce((sum, p) => sum + p.valor, 0);
+                    const comissao = faturamento * 0.08; // 8% de comissão
+
+                    doc.text(`${empresa.nome}:`, 20, y);
+                    doc.text(`Faturamento: R$ ${faturamento.toFixed(2)}`, 30, y + 10);
+                    doc.text(`Comissão (8%): R$ ${comissao.toFixed(2)}`, 30, y + 20);
+                    y += 40;
+                });
+
+                doc.save('relatorio-financeiro.pdf');
+            }, []);
+
+            return { generateOrderReport, generateFinancialReport };
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = useState('home');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [realTimeData, setRealTimeData] = useState({});
+            
+            const { position, tracking, startTracking, stopTracking } = useGPSTracking();
+            const { sendOrderNotification, sendDeliveryUpdate } = useWhatsAppBusiness();
+            const { trackEvent, getConversionRate } = useAnalytics();
+            const { generateOrderReport, generateFinancialReport } = usePDFReports();
+
+            // Track page views
+            useEffect(() => {
+                trackEvent('page_view', { view: currentView });
+            }, [currentView, trackEvent]);
+
+            // Online/offline detection
+            useEffect(() => {
+                const handleOnline = () => setIsOnline(true);
+                const handleOffline = () => setIsOnline(false);
+
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                };
+            }, []);
+
+            // Real-time data simulation
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setRealTimeData({
+                        activeUsers: Math.floor(Math.random() * 50) + 10,
+                        onlineDrivers: Math.floor(Math.random() * 15) + 5,
+                        pendingOrders: Math.floor(Math.random() * 20) + 3,
+                        avgDeliveryTime: Math.floor(Math.random() * 20) + 25,
+                        timestamp: new Date().toISOString()
+                    });
+                }, 5000);
+
+                return () => clearInterval(interval);
+            }, []);
+
+            // Enterprise data with more complex structure
+            const [users, setUsers] = useStoredState('delivery_users_v5', [
+                {
+                    id: 'user1',
+                    nome: 'João Entregador',
+                    email: 'joao@teste.com',
+                    senha: '123456',
+                    tipo: 'entregador',
+                    status: 'ativo',
+                    telefone: '(88) 99999-1234',
+                    cpf: '123.456.789-00',
+                    veiculo: 'Moto Honda CG 160',
+                    placa: 'ABC-1234',
+                    disponivel: true,
+                    totalEntregas: 156,
+                    endereco: 'Rua das Palmeiras, 100',
+                    bairro: 'Centro',
+                    cnh: '12345678901',
+                    avaliacaoMedia: 4.8,
+                    localizacao: { lat: -3.6914, lng: -40.3492 },
+                    configuracoes: {
+                        notificacoesPush: true,
+                        notificacoesWhatsApp: true,
+                        raioEntrega: 5,
+                        horarioTrabalho: { inicio: '18:00', fim: '23:00' }
+                    },
+                    carteira: {
+                        saldo: 1250.75,
+                        contaBanco: '12345-6',
+                        agencia: '1234',
+                        banco: 'Banco do Brasil',
+                        pix: 'joao@teste.com',
+                        historicoSaques: []
+                    },
+                    metricas: {
+                        tempoMedioEntrega: 28,
+                        taxaAceitacao: 95,
+                        distanciaPercorrida: 2847.5,
+                        avaliacoes: 142,
+                        cancelamentos: 3
+                    },
+                    cadastradoEm: '2024-01-15 10:30:00',
+                    ultimaAtividade: new Date().toISOString()
+                }
+            ]);
+
+            const [empresas, setEmpresas] = useStoredState('delivery_empresas_v5', [
+                {
+                    id: 'emp1',
+                    nome: 'Pizza do Zé',
+                    email: 'pizza@teste.com',
+                    senha: '123456',
+                    tipo: 'empresa',
+                    status: 'ativo',
+                    cnpj: '12.345.678/0001-90',
+                    telefone: '(88) 3611-1234',
+                    whatsapp: '(88) 99999-0001',
+                    categoria: 'Pizzaria',
+                    endereco: 'Rua Coronel Mont\'Alverne, 500 - Centro',
+                    responsavel: 'José Silva',
+                    bairro: 'Centro',
+                    taxaEntrega: '5.00',
+                    tempoEntrega: '30-45 min',
+                    avaliacaoMedia: 4.5,
+                    totalPedidos: 1847,
+                    localizacao: { lat: -3.6889, lng: -40.3467 },
+                    produtos: [
+                        { 
+                            id: 1, 
+                            nome: 'Pizza Margherita', 
+                            preco: 25.90, 
+                            descricao: 'Molho de tomate, mussarela, manjericão', 
+                            categoria: 'Pizza', 
+                            disponivel: true, 
+                            tempoPrep: 25, 
+                            imagem: '🍕',
+                            promocao: { ativo: false, precoPromocional: 0 },
+                            ingredientes: ['molho de tomate', 'mussarela', 'manjericão'],
+                            calorias: 280,
+                            vegano: false,
+                            semGluten: false
+                        }
+                    ],
+                    configuracoes: {
+                        aceitaPedidosOnline: true,
+                        tempoMinimoEntrega: 30,
+                        valorMinimoEntrega: 20.00,
+                        formasPagamento: ['dinheiro', 'cartao', 'pix'],
+                        taxaComissao: 8.5,
+                        integracaoWhatsApp: true,
+                        notificacoesPush: true
+                    },
+                    financeiro: {
+                        faturamentoMensal: 45780.90,
+                        comissoesPendentes: 3662.47,
+                        contaBanco: '98765-4',
+                        agencia: '9876',
+                        banco: 'Caixa Econômica',
+                        pix: 'pizza@teste.com',
+                        historicoFaturamento: []
+                    },
+                    metricas: {
+                        tempoMedioPreparo: 32,
+                        taxaAceitacao: 98,
+                        avaliacoes: 1203,
+                        cancelamentos: 23,
+                        produtosMaisVendidos: ['Pizza Margherita', 'Pizza Calabresa']
+                    },
+                    cadastradaEm: '2024-01-10 09:00:00'
+                }
+            ]);
+
+            const [pedidos, setPedidos] = useStoredState('delivery_pedidos_v5', [
+                {
+                    id: '1',
+                    cliente: 'Maria Silva',
+                    clienteId: 'cons1',
+                    endereco: 'Rua das Flores, 123 - Centro',
+                    localizacaoEntrega: { lat: -3.6904, lng: -40.3456 },
+                    telefone: '(88) 99999-5678',
+                    valor: 45.90,
+                    status: 'em_entrega',
+                    items: [
+                        { nome: 'Pizza Margherita', quantidade: 1, preco: 25.90 },
+                        { nome: 'Coca-Cola 2L', quantidade: 1, preco: 8.90 }
+                    ],
+                    empresaId: 'emp1',
+                    empresaNome: 'Pizza do Zé',
+                    empresaLocalizacao: { lat: -3.6889, lng: -40.3467 },
+                    entregadorId: 'user1',
+                    entregadorNome: 'João Entregador',
+                    criadoEm: '2024-01-25 19:30:00',
+                    tempoEstimado: '30-45 min',
+                    observacoes: 'Sem cebola na pizza',
+                    formaPagamento: 'pix',
+                    statusPagamento: 'aprovado',
+                    troco: 0,
+                    taxaEntrega: 5.00,
+                    subtotal: 34.80,
+                    desconto: 0,
+                    distanciaKm: 1.2,
+                    tempoEstimadoEntrega: 35,
+                    prioridade: 'normal',
+                    tracking: {
+                        rotaCompleta: [
+                            { lat: -3.6889, lng: -40.3467, timestamp: '2024-01-25 20:00:00' },
+                            { lat: -3.6900, lng: -40.3450, timestamp: '2024-01-25 20:05:00' },
+                            { lat: -3.6904, lng: -40.3456, timestamp: '2024-01-25 20:15:00' }
+                        ],
+                        tempoRealEntrega: null,
+                        distanciaPercorrida: 1.3
+                    },
+                    pagamento: {
+                        metodo: 'pix',
+                        status: 'aprovado',
+                        transactionId: 'pix_123456789',
+                        processadoEm: '2024-01-25 19:32:00'
+                    },
+                    historico: [
+                        { status: 'disponivel', timestamp: '2024-01-25 19:30:00', descricao: 'Pedido realizado', usuario: 'Maria Silva' },
+                        { status: 'em_preparo', timestamp: '2024-01-25 19:35:00', descricao: 'Preparo iniciado', usuario: 'Pizza do Zé' },
+                        { status: 'pronto', timestamp: '2024-01-25 20:00:00', descricao: 'Pedido pronto', usuario: 'Pizza do Zé' },
+                        { status: 'em_entrega', timestamp: '2024-01-25 20:05:00', descricao: 'Saiu para entrega', usuario: 'João Entregador' }
+                    ],
+                    chatId: 'chat_1_emp1_cons1',
+                    integracoes: {
+                        whatsappEnviado: true,
+                        emailEnviado: false,
+                        smsEnviado: false
+                    }
+                }
+            ]);
+
+            const admins = [
+                {
+                    id: 'admin1',
+                    nome: 'Administrador Enterprise',
+                    email: 'admin',
+                    senha: 'tenderbr0',
+                    tipo: 'admin',
+                    permissoes: ['all'],
+                    ultimoLogin: new Date().toISOString()
+                }
+            ];

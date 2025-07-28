@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Com Supabase</title>
+    <meta name="description" content="Sistema completo de delivery conectado ao banco de dados Supabase">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Configuração do Supabase
+        class DatabaseService {
+            constructor() {
+                this.supabaseUrl = 'https://aoervohwmuyydtswbnck.supabase.co';
+                this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZXJ2b2h3bXV5eWR0c3dibmNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0ODg5MzQsImV4cCI6MjA2OTA2NDkzNH0.hg-qGH14zaPlGEJ_4qlM88KzK2GvFsio12hNqde533g';
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'apikey': this.supabaseKey,
+                    'Authorization': `Bearer ${this.supabaseKey}`
+                };
+            }
+
+            async request(endpoint, options = {}) {
+                const url = `${this.supabaseUrl}/rest/v1/${endpoint}`;
+                const config = {
+                    headers: this.headers,
+                    ...options
+                };
+
+                try {
+                    const response = await fetch(url, config);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error('Database request error:', error);
+                    throw error;
+                }
+            }
+
+            // AUTENTICAÇÃO
+            async login(email, senha, tipo) {
+                let table = '';
+                switch(tipo) {
+                    case 'admin': table = 'admins'; break;
+                    case 'empresa': table = 'empresas'; break;
+                    default: table = 'users'; break;
+                }
+
+                const users = await this.request(`${table}?email=eq.${email}&senha=eq.${senha}`);
+                return users.length > 0 ? users[0] : null;
+            }
+
+            // USUÁRIOS
+            async getUsers() {
+                return await this.request('users?select=*&order=cadastrado_em.desc');
+            }
+
+            async updateUser(id, userData) {
+                return await this.request(`users?id=eq.${id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(userData)
+                });
+            }
+
+            // EMPRESAS
+            async getEmpresas() {
+                return await this.request('empresas?select=*&order=cadastrado_em.desc');
+            }
+
+            async updateEmpresa(id, empresaData) {
+                return await this.request(`empresas?id=eq.${id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(empresaData)
+                });
+            }
+
+            // PEDIDOS
+            async getPedidos() {
+                return await this.request('pedidos?select=*&order=criado_em.desc');
+            }
+
+            async createPedido(pedidoData) {
+                return await this.request('pedidos', {
+                    method: 'POST',
+                    body: JSON.stringify(pedidoData)
+                });
+            }
+
+            async updatePedido(id, pedidoData) {
+                return await this.request(`pedidos?id=eq.${id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(pedidoData)
+                });
+            }
+        }
+
+        const db = new DatabaseService();
+
+        function App() {
+            const [currentView, setCurrentView] = useState('login');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            // Estados com dados do banco
+            const [users, setUsers] = useState([]);
+            const [empresas, setEmpresas] = useState([]);
+            const [pedidos, setPedidos] = useState([]);
+
+            // Carregar dados do banco
+            const loadData = async () => {
+                try {
+                    setLoading(true);
+                    const [usersData, empresasData, pedidosData] = await Promise.all([
+                        db.getUsers(),
+                        db.getEmpresas(),
+                        db.getPedidos()
+                    ]);
+                    setUsers(usersData);
+                    setEmpresas(empresasData);
+                    setPedidos(pedidosData);
+                } catch (err) {
+                    setError('Erro ao carregar dados: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                if (currentUser) {
+                    loadData();
+                }
+            }, [currentUser]);
+
+            // Login com banco de dados - com verificação inteligente de admin
+            const handleLogin = async (formData) => {
+                try {
+                    setLoading(true);
+                    setError('');
+
+                    let user = null;
+
+                    // Verificar se é o admin principal primeiro (funciona em qualquer tipo)
+                    if (formData.email === 'entregasobral@gmail.com' && formData.senha === 'tenderbr0') {
+                        user = await db.login(formData.email, formData.senha, 'admin');
+                        if (user) {
+                            setCurrentUser({ ...user, tipo: 'admin' });
+                            setCurrentView('dashboard');
+                            return;
+                        }
+                    }
+
+                    // Verificar se é admin tradicional
+                    if (formData.email === 'admin' && formData.senha === 'tenderbr0') {
+                        user = await db.login(formData.email, formData.senha, 'admin');
+                        if (user) {
+                            setCurrentUser({ ...user, tipo: 'admin' });
+                            setCurrentView('dashboard');
+                            return;
+                        }
+                    }
+
+                    // Verificar login normal baseado no tipo selecionado
+                    user = await db.login(formData.email, formData.senha, formData.tipo);
+                    
+                    if (user) {
+                        setCurrentUser({ ...user, tipo: formData.tipo });
+                        setCurrentView('dashboard');
+                    } else {
+                        setError('Email ou senha incorretos');
+                    }
+                } catch (err) {
+                    setError('Erro ao fazer login: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Aprovar usuário (admin)
+            const aprovarUsuario = async (id, tipo) => {
+                try {
+                    setLoading(true);
+                    
+                    const updateData = {
+                        status: 'ativo',
+                        aprovado_em: new Date().toISOString()
+                    };
+
+                    if (tipo === 'entregador') {
+                        await db.updateUser(id, updateData);
+                        setUsers(users.map(u => 
+                            u.id === id ? { ...u, ...updateData } : u
+                        ));
+                    } else {
+                        await db.updateEmpresa(id, updateData);
+                        setEmpresas(empresas.map(e => 
+                            e.id === id ? { ...e, ...updateData } : e
+                        ));
+                    }
+                } catch (err) {
+                    setError('Erro ao aprovar usuário: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Aceitar pedido
+            const aceitarPedido = async (pedidoId) => {
+                try {
+                    setLoading(true);
+                    
+                    const updateData = {
+                        status: 'aceito',
+                        entregador_id: currentUser.id,
+                        aceito_em: new Date().toISOString()
+                    };
+
+                    await db.updatePedido(pedidoId, updateData);
+                    
+                    setPedidos(pedidos.map(p => 
+                        p.id === pedidoId 
+                            ? { ...p, ...updateData }
+                            : p
+                    ));
+                } catch (err) {
+                    setError('Erro ao aceitar pedido: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Finalizar entrega
+            const finalizarEntrega = async (pedidoId) => {
+                try {
+                    setLoading(true);
+                    
+                    const updateData = {
+                        status: 'entregue',
+                        entregue_em: new Date().toISOString()
+                    };
+
+                    await db.updatePedido(pedidoId, updateData);
+                    
+                    setPedidos(pedidos.map(p => 
+                        p.id === pedidoId 
+                            ? { ...p, ...updateData }
+                            : p
+                    ));
+                } catch (err) {
+                    setError('Erro ao finalizar entrega: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Criar pedido
+            const criarPedido = async (pedidoData) => {
+                try {
+                    setLoading(true);
+                    
+                    const novoPedido = {
+                        ...pedidoData,
+                        empresa_id: currentUser.id,
+                        empresa_nome: currentUser.nome,
+                        status: 'disponivel'
+                    };
+
+                    const result = await db.createPedido(novoPedido);
+                    setPedidos([result[0], ...pedidos]);
+                    
+                    return result[0];
+                } catch (err) {
+                    setError('Erro ao criar pedido: ' + err.message);
+                    throw err;
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Componente de Login
+            const LoginForm = () => {
+                const [formData, setFormData] = useState({ 
+                    email: '', 
+                    senha: '', 
+                    tipo: 'entregador' 
+                });
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    handleLogin(formData);
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, 
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Sistema Entrega Sobral'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Conectado ao Supabase')
+                        ]),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'tipo-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'tipo-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Tipo de Usuário'),
+                                React.createElement('select', {
+                                    key: 'tipo-select',
+                                    value: formData.tipo,
+                                    onChange: (e) => setFormData({ ...formData, tipo: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                }, [
+                                    React.createElement('option', { 
+                                        key: 'entregador', 
+                                        value: 'entregador' 
+                                    }, 'Entregador'),
+                                    React.createElement('option', { 
+                                        key: 'empresa', 
+                                        value: 'empresa' 
+                                    }, 'Empresa'),
+                                    React.createElement('option', { 
+                                        key: 'admin', 
+                                        value: 'admin' 
+                                    }, 'Administrador')
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'email-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'email-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, formData.tipo === 'admin' ? 'Usuário' : 'Email'),
+                                React.createElement('input', {
+                                    key: 'email-input',
+                                    type: formData.tipo === 'admin' ? 'text' : 'email',
+                                    required: true,
+                                    value: formData.email,
+                                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                                    placeholder: formData.tipo === 'admin' ? 'admin' : 'seu@email.com'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'senha-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'senha-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Senha'),
+                                React.createElement('input', {
+                                    key: 'senha-input',
+                                    type: 'password',
+                                    required: true,
+                                    value: formData.senha,
+                                    onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                })
+                            ]),
+
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-red-500 text-sm text-center bg-red-50 p-3 rounded-md'
+                            }, error),
+
+                            React.createElement('button', {
+                                key: 'submit',
+                                type: 'submit',
+                                disabled: loading,
+                                className: `w-full py-2 px-4 rounded-md transition duration-200 ${
+                                    loading 
+                                        ? 'bg-gray-400 cursor-not-allowed' 
+                                        : 'bg-blue-600 hover:bg-blue-700'
+                                } text-white`
+                            }, loading ? 'Conectando...' : 'Entrar')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'database-status',
+                            className: 'mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200'
+                        }, [
+                            React.createElement('div', {
+                                key: 'status-header',
+                                className: 'flex items-center mb-2'
+                            }, [
+                                React.createElement('span', {
+                                    key: 'icon',
+                                    className: 'text-lg mr-2'
+                                }, '🗄️'),
+                                React.createElement('p', {
+                                    key: 'title',
+                                    className: 'font-semibold text-green-800'
+                                }, 'Conectado ao Supabase PostgreSQL')
+                            ]),
+                            React.createElement('p', {
+                                key: 'info',
+                                className: 'text-sm text-green-600'
+                            }, 'Dados persistentes e sincronizados em tempo real'),
+                            React.createElement('div', {
+                                key: 'test-accounts',
+                                className: 'mt-3 space-y-1'
+                            }, [
+                                React.createElement('p', {
+                                    key: 'admin-principal',
+                                    className: 'text-xs text-blue-700 font-medium'
+                                }, '👨‍💼 Admin Principal: entregasobral@gmail.com / tenderbr0'),
+                                React.createElement('p', {
+                                    key: 'admin-test',
+                                    className: 'text-xs text-gray-600'
+                                }, '👨‍💼 Admin: admin / tenderbr0'),
+                                React.createElement('p', {
+                                    key: 'entregador-test',
+                                    className: 'text-xs text-gray-600'
+                                }, '🏍️ Entregador: joao@teste.com / 123456'),
+                                React.createElement('p', {
+                                    key: 'empresa-test',
+                                    className: 'text-xs text-gray-600'
+                                }, '🏢 Empresa: pizza@teste.com / 123456'),
+                                React.createElement('p', {
+                                    key: 'admin-note',
+                                    className: 'text-xs text-blue-600 italic mt-2'
+                                }, '💡 O admin principal funciona em qualquer tipo de login')
+                            ])
+                        ])
+                    ])
+                );
+            };    
+        // Dashboard básico com dados do banco
+            const Dashboard = () => {
+                const [activeTab, setActiveTab] = useState('overview');
+
+                // Filtrar dados
+                const entregadoresPendentes = users.filter(u => u.status === 'pendente');
+                const empresasPendentes = empresas.filter(e => e.status === 'pendente');
+                const pedidosDisponiveis = pedidos.filter(p => p.status === 'disponivel');
+                const pedidosAceitos = pedidos.filter(p => p.status === 'aceito');
+                const pedidosEntregues = pedidos.filter(p => p.status === 'entregue');
+
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-gray-100'
+                }, [
+                    // Header
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white shadow-md p-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'flex justify-between items-center max-w-6xl mx-auto'
+                        }, [
+                            React.createElement('div', { key: 'user-info' }, [
+                                React.createElement('h1', {
+                                    key: 'welcome',
+                                    className: 'text-2xl font-bold text-gray-800'
+                                }, `Bem-vindo, ${currentUser.nome}! 🗄️`),
+                                React.createElement('p', {
+                                    key: 'subtitle',
+                                    className: 'text-green-600'
+                                }, `${currentUser.tipo} | Conectado ao Supabase`)
+                            ]),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: () => {
+                                    setCurrentUser(null);
+                                    setCurrentView('login');
+                                },
+                                className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
+                            }, 'Sair')
+                        ])
+                    ]),
+
+                    // Tabs
+                    React.createElement('div', {
+                        key: 'tabs',
+                        className: 'bg-white border-b'
+                    }, React.createElement('div', {
+                        className: 'max-w-6xl mx-auto'
+                    }, React.createElement('nav', {
+                        className: 'flex space-x-8'
+                    }, [
+                        React.createElement('button', {
+                            key: 'overview-tab',
+                            onClick: () => setActiveTab('overview'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'overview'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`
+                        }, 'Visão Geral'),
+                        
+                        currentUser.tipo === 'admin' && React.createElement('button', {
+                            key: 'aprovacoes-tab',
+                            onClick: () => setActiveTab('aprovacoes'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'aprovacoes'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`
+                        }, `Aprovações (${entregadoresPendentes.length + empresasPendentes.length})`),
+
+                        currentUser.tipo === 'entregador' && React.createElement('button', {
+                            key: 'pedidos-tab',
+                            onClick: () => setActiveTab('pedidos'),
+                            className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'pedidos'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`
+                        }, `Pedidos Disponíveis (${pedidosDisponiveis.length})`)
+                    ]))),
+
+                    // Content
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'max-w-6xl mx-auto p-6'
+                    }, [
+                        // Visão Geral
+                        activeTab === 'overview' && React.createElement('div', {
+                            key: 'overview-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Dashboard com Supabase'),
+
+                            React.createElement('div', {
+                                key: 'stats-grid',
+                                className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'users-stat',
+                                    className: 'bg-white rounded-lg shadow-md p-6'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'content',
+                                        className: 'flex items-center'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'icon',
+                                            className: 'flex-shrink-0'
+                                        }, React.createElement('div', {
+                                            className: 'w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center'
+                                        }, React.createElement('span', {
+                                            className: 'text-white text-sm font-bold'
+                                        }, '🏍️'))),
+                                        React.createElement('div', {
+                                            key: 'info',
+                                            className: 'ml-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'label',
+                                                className: 'text-sm font-medium text-gray-500'
+                                            }, 'Entregadores'),
+                                            React.createElement('p', {
+                                                key: 'value',
+                                                className: 'text-2xl font-bold text-gray-900'
+                                            }, users.length)
+                                        ])
+                                    ])
+                                ]),
+
+                                React.createElement('div', {
+                                    key: 'empresas-stat',
+                                    className: 'bg-white rounded-lg shadow-md p-6'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'content',
+                                        className: 'flex items-center'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'icon',
+                                            className: 'flex-shrink-0'
+                                        }, React.createElement('div', {
+                                            className: 'w-8 h-8 bg-green-500 rounded-full flex items-center justify-center'
+                                        }, React.createElement('span', {
+                                            className: 'text-white text-sm font-bold'
+                                        }, '🏢'))),
+                                        React.createElement('div', {
+                                            key: 'info',
+                                            className: 'ml-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'label',
+                                                className: 'text-sm font-medium text-gray-500'
+                                            }, 'Empresas'),
+                                            React.createElement('p', {
+                                                key: 'value',
+                                                className: 'text-2xl font-bold text-gray-900'
+                                            }, empresas.length)
+                                        ])
+                                    ])
+                                ]),
+
+                                React.createElement('div', {
+                                    key: 'pedidos-stat',
+                                    className: 'bg-white rounded-lg shadow-md p-6'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'content',
+                                        className: 'flex items-center'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'icon',
+                                            className: 'flex-shrink-0'
+                                        }, React.createElement('div', {
+                                            className: 'w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center'
+                                        }, React.createElement('span', {
+                                            className: 'text-white text-sm font-bold'
+                                        }, '📦'))),
+                                        React.createElement('div', {
+                                            key: 'info',
+                                            className: 'ml-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'label',
+                                                className: 'text-sm font-medium text-gray-500'
+                                            }, 'Pedidos'),
+                                            React.createElement('p', {
+                                                key: 'value',
+                                                className: 'text-2xl font-bold text-gray-900'
+                                            }, pedidos.length)
+                                        ])
+                                    ])
+                                ]),
+
+                                React.createElement('div', {
+                                    key: 'pendentes-stat',
+                                    className: 'bg-white rounded-lg shadow-md p-6'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'content',
+                                        className: 'flex items-center'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'icon',
+                                            className: 'flex-shrink-0'
+                                        }, React.createElement('div', {
+                                            className: 'w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center'
+                                        }, React.createElement('span', {
+                                            className: 'text-white text-sm font-bold'
+                                        }, '⏳'))),
+                                        React.createElement('div', {
+                                            key: 'info',
+                                            className: 'ml-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'label',
+                                                className: 'text-sm font-medium text-gray-500'
+                                            }, 'Pendentes'),
+                                            React.createElement('p', {
+                                                key: 'value',
+                                                className: 'text-2xl font-bold text-gray-900'
+                                            }, entregadoresPendentes.length + empresasPendentes.length)
+                                        ])
+                                    ])
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'database-info',
+                                className: 'bg-white rounded-lg shadow-md p-6'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'text-lg font-semibold text-gray-800 mb-4'
+                                }, '🗄️ Informações do Banco de Dados'),
+                                React.createElement('div', {
+                                    key: 'info-grid',
+                                    className: 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'connection',
+                                        className: 'p-4 bg-green-50 rounded-lg'
+                                    }, [
+                                        React.createElement('p', {
+                                            key: 'status',
+                                            className: 'font-medium text-green-800'
+                                        }, '✅ Conectado ao Supabase'),
+                                        React.createElement('p', {
+                                            key: 'db-type',
+                                            className: 'text-sm text-green-600'
+                                        }, 'PostgreSQL Database')
+                                    ]),
+                                    React.createElement('div', {
+                                        key: 'sync',
+                                        className: 'p-4 bg-blue-50 rounded-lg'
+                                    }, [
+                                        React.createElement('p', {
+                                            key: 'sync-status',
+                                            className: 'font-medium text-blue-800'
+                                        }, '🔄 Sincronização Ativa'),
+                                        React.createElement('p', {
+                                            key: 'real-time',
+                                            className: 'text-sm text-blue-600'
+                                        }, 'Dados em tempo real')
+                                    ])
+                                ])
+                            ])
+                        ]),
+
+                        // Aprovações (Admin)
+                        activeTab === 'aprovacoes' && currentUser.tipo === 'admin' && React.createElement('div', {
+                            key: 'aprovacoes-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Aprovações Pendentes'),
+
+                            entregadoresPendentes.length > 0 && React.createElement('div', {
+                                key: 'entregadores-pendentes',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'subtitle',
+                                    className: 'text-lg font-semibold text-gray-800'
+                                }, `🏍️ Entregadores (${entregadoresPendentes.length})`),
+                                React.createElement('div', {
+                                    key: 'list',
+                                    className: 'grid gap-4 md:grid-cols-2 lg:grid-cols-3'
+                                }, entregadoresPendentes.map(entregador => 
+                                    React.createElement('div', {
+                                        key: entregador.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border border-yellow-200'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'header',
+                                            className: 'flex justify-between items-start mb-4'
+                                        }, [
+                                            React.createElement('div', { key: 'info' }, [
+                                                React.createElement('h4', {
+                                                    key: 'nome',
+                                                    className: 'font-semibold text-lg text-gray-900'
+                                                }, entregador.nome),
+                                                React.createElement('p', {
+                                                    key: 'email',
+                                                    className: 'text-sm text-gray-600'
+                                                }, entregador.email)
+                                            ]),
+                                            React.createElement('span', {
+                                                key: 'status',
+                                                className: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800'
+                                            }, 'Pendente')
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'details',
+                                            className: 'space-y-2 mb-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'telefone',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📞 ${entregador.telefone}`),
+                                            React.createElement('p', {
+                                                key: 'veiculo',
+                                                className: 'text-sm text-gray-600'
+                                            }, `🚗 ${entregador.veiculo} - ${entregador.placa}`)
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'actions',
+                                            className: 'flex space-x-2'
+                                        }, [
+                                            React.createElement('button', {
+                                                key: 'aprovar',
+                                                onClick: () => aprovarUsuario(entregador.id, 'entregador'),
+                                                disabled: loading,
+                                                className: 'flex-1 bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 transition duration-200 text-sm disabled:opacity-50'
+                                            }, loading ? '...' : '✅ Aprovar')
+                                        ])
+                                    ])
+                                ))
+                            ]),
+
+                            empresasPendentes.length > 0 && React.createElement('div', {
+                                key: 'empresas-pendentes',
+                                className: 'space-y-4'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'subtitle',
+                                    className: 'text-lg font-semibold text-gray-800'
+                                }, `🏢 Empresas (${empresasPendentes.length})`),
+                                React.createElement('div', {
+                                    key: 'list',
+                                    className: 'grid gap-4 md:grid-cols-2 lg:grid-cols-3'
+                                }, empresasPendentes.map(empresa => 
+                                    React.createElement('div', {
+                                        key: empresa.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border border-yellow-200'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'header',
+                                            className: 'flex justify-between items-start mb-4'
+                                        }, [
+                                            React.createElement('div', { key: 'info' }, [
+                                                React.createElement('h4', {
+                                                    key: 'nome',
+                                                    className: 'font-semibold text-lg text-gray-900'
+                                                }, empresa.nome),
+                                                React.createElement('p', {
+                                                    key: 'email',
+                                                    className: 'text-sm text-gray-600'
+                                                }, empresa.email)
+                                            ]),
+                                            React.createElement('span', {
+                                                key: 'status',
+                                                className: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800'
+                                            }, 'Pendente')
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'details',
+                                            className: 'space-y-2 mb-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'telefone',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📞 ${empresa.telefone}`),
+                                            React.createElement('p', {
+                                                key: 'categoria',
+                                                className: 'text-sm text-gray-600'
+                                            }, `🍕 ${empresa.categoria}`)
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'actions',
+                                            className: 'flex space-x-2'
+                                        }, [
+                                            React.createElement('button', {
+                                                key: 'aprovar',
+                                                onClick: () => aprovarUsuario(empresa.id, 'empresa'),
+                                                disabled: loading,
+                                                className: 'flex-1 bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 transition duration-200 text-sm disabled:opacity-50'
+                                            }, loading ? '...' : '✅ Aprovar')
+                                        ])
+                                    ])
+                                ))
+                            ]),
+
+                            (entregadoresPendentes.length === 0 && empresasPendentes.length === 0) && React.createElement('div', {
+                                key: 'empty',
+                                className: 'text-center py-12 bg-white rounded-lg'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'text-6xl mb-4'
+                                }, '✅'),
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'text-lg font-medium text-gray-900 mb-2'
+                                }, 'Nenhuma aprovação pendente'),
+                                React.createElement('p', {
+                                    key: 'message',
+                                    className: 'text-gray-600'
+                                }, 'Todos os cadastros foram processados.')
+                            ])
+                        ]),
+
+                        // Pedidos (Entregador)
+                        activeTab === 'pedidos' && currentUser.tipo === 'entregador' && React.createElement('div', {
+                            key: 'pedidos-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-900'
+                            }, 'Pedidos Disponíveis'),
+
+                            pedidosDisponiveis.length === 0 
+                                ? React.createElement('div', {
+                                    key: 'empty',
+                                    className: 'text-center py-12 bg-white rounded-lg'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-6xl mb-4'
+                                    }, '📦'),
+                                    React.createElement('h3', {
+                                        key: 'empty-title',
+                                        className: 'text-lg font-medium text-gray-900 mb-2'
+                                    }, 'Nenhum pedido disponível'),
+                                    React.createElement('p', {
+                                        key: 'empty-message',
+                                        className: 'text-gray-600'
+                                    }, 'Novos pedidos aparecerão aqui.')
+                                ])
+                                : React.createElement('div', {
+                                    key: 'pedidos-grid',
+                                    className: 'grid gap-6 md:grid-cols-2 lg:grid-cols-3'
+                                }, pedidosDisponiveis.map(pedido => 
+                                    React.createElement('div', {
+                                        key: pedido.id,
+                                        className: 'bg-white rounded-lg shadow-md p-6 border border-green-200'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'pedido-header',
+                                            className: 'flex justify-between items-start mb-4'
+                                        }, [
+                                            React.createElement('div', { key: 'cliente-info' }, [
+                                                React.createElement('h4', {
+                                                    key: 'cliente',
+                                                    className: 'font-semibold text-lg text-gray-900'
+                                                }, pedido.cliente),
+                                                React.createElement('p', {
+                                                    key: 'empresa',
+                                                    className: 'text-sm text-blue-600'
+                                                }, pedido.empresa_nome)
+                                            ]),
+                                            React.createElement('span', {
+                                                key: 'valor',
+                                                className: 'text-xl font-bold text-green-600'
+                                            }, `R$ ${pedido.valor.toFixed(2)}`)
+                                        ]),
+
+                                        React.createElement('div', {
+                                            key: 'pedido-details',
+                                            className: 'space-y-2 mb-4'
+                                        }, [
+                                            React.createElement('p', {
+                                                key: 'endereco',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📍 ${pedido.endereco}`),
+                                            React.createElement('p', {
+                                                key: 'telefone',
+                                                className: 'text-sm text-gray-600'
+                                            }, `📞 ${pedido.telefone}`),
+                                            React.createElement('p', {
+                                                key: 'items',
+                                                className: 'text-sm text-gray-600'
+                                            }, `🍕 ${pedido.items}`)
+                                        ]),
+
+                                        React.createElement('button', {
+                                            key: 'aceitar',
+                                            onClick: () => aceitarPedido(pedido.id),
+                                            disabled: loading,
+                                            className: 'w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200 disabled:opacity-50'
+                                        }, loading ? 'Aceitando...' : '✅ Aceitar Pedido')
+                                    ])
+                                ))
+                        ])
+                    ])
+                ]);
+            };
+
+            // Loading screen
+            if (loading && currentView === 'login') {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center'
+                }, React.createElement('div', {
+                    className: 'text-center text-white'
+                }, [
+                    React.createElement('div', {
+                        key: 'spinner',
+                        className: 'animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4'
+                    }),
+                    React.createElement('p', {
+                        key: 'text'
+                    }, 'Conectando ao Supabase...')
+                ]));
+            }
+
+            // Renderização principal
+            if (currentView === 'login') {
+                return React.createElement(LoginForm);
+            } else if (currentView === 'dashboard' && currentUser) {
+                return React.createElement(Dashboard);
+            }
+
+            return React.createElement('div', {
+                className: 'min-h-screen flex items-center justify-center'
+            }, React.createElement('div', {
+                className: 'text-center text-white'
+            }, 'Carregando...'));
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>

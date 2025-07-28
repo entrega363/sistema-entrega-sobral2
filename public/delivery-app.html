@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Delivery Management</title>
+    <meta name="description" content="Sistema completo de delivery para gerenciamento de entregadores, empresas e pedidos em Sobral-CE">
+    <meta name="keywords" content="delivery, sobral, entrega, pedidos, restaurantes">
+    <meta name="author" content="Sistema Entrega Sobral">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="root"></div>
+
+    <script type="module">
+      // Import React from CDN (matching component version)
+      import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+      import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+      // Hatch client initialization with localStorage-based storage
+      const initHatchClient = async (useEffect, useState) => {
+          // Try to load stored state from JSON file, fallback to inline data
+          let initialStorage = {};
+          try {
+              const response = await fetch('./storedState.json');
+              initialStorage = await response.json();
+          } catch (error) {
+              console.warn('Could not load storedState.json, using inline data:', error);
+              // Fallback to inline stored state data for file:// URLs
+              initialStorage = {};
+          }
+
+          const storage = { ...initialStorage };
+
+          return {
+              useStoredState: (key, defaultValue) => {
+                  const [state, setState] = useState(() => {
+                      if (storage[key] !== undefined) {
+                          return storage[key];
+                      }
+                      try {
+                          const item = localStorage.getItem(key);
+                          return item ? JSON.parse(item) : defaultValue;
+                      } catch {
+                          return defaultValue;
+                      }
+                  });
+
+                  const setValue = (value) => {
+                      setState(value);
+                      storage[key] = value;
+                      try {
+                          localStorage.setItem(key, JSON.stringify(value));
+                      } catch (error) {
+                          console.warn('Could not save to localStorage:', error);
+                      }
+                  };
+
+                  return [state, setValue];
+              }
+          };
+      };
+
+      // Initialize Hatch client
+      const hatchClient = await initHatchClient(useEffect, useState);
+      window.hatch = hatchClient;  
+    // Load and render the main component
+      const loadComponent = async () => {
+        try {
+          // Import the component module
+          const module = await import('./component.js');
+          const Component = module.default;
+          
+          // Render the component
+          const root = createRoot(document.getElementById('root'));
+          root.render(React.createElement(Component));
+        } catch (error) {
+          console.error('Error loading component:', error);
+          
+          // Fallback: render a simple error message
+          const root = createRoot(document.getElementById('root'));
+          root.render(
+            React.createElement('div', {
+              className: 'min-h-screen bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center'
+            }, 
+              React.createElement('div', {
+                className: 'bg-white rounded-lg shadow-2xl p-8 text-center max-w-md'
+              }, [
+                React.createElement('div', {
+                  key: 'icon',
+                  className: 'text-6xl mb-4'
+                }, '🚚'),
+                React.createElement('h2', {
+                  key: 'title',
+                  className: 'text-2xl font-bold text-gray-800 mb-4'
+                }, 'Sistema Entrega Sobral'),
+                React.createElement('p', {
+                  key: 'error',
+                  className: 'text-red-600 mb-4'
+                }, 'Erro ao carregar o sistema. Verifique se todos os arquivos estão presentes.'),
+                React.createElement('button', {
+                  key: 'reload',
+                  onClick: () => window.location.reload(),
+                  className: 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
+                }, 'Recarregar Página')
+              ])
+            )
+          );
+        }
+      };
+
+      // Load the component when the page is ready
+      loadComponent();
+    </script>
+</body>
+</html>

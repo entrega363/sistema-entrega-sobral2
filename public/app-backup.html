@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Backup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Hook para localStorage
+        function useStoredState(key, initialValue) {
+            const [state, setState] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                try {
+                    setState(value);
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.error('Erro ao salvar no localStorage:', error);
+                }
+            };
+
+            return [state, setValue];
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = useState('login');
+            const [currentUser, setCurrentUser] = useState(null);
+
+            // Estados dos dados
+            const [users, setUsers] = useStoredState('delivery_users', [
+                {
+                    id: 'user1',
+                    nome: 'João Entregador',
+                    email: 'joao@teste.com',
+                    senha: '123456',
+                    tipo: 'entregador',
+                    status: 'ativo',
+                    telefone: '(88) 99999-1234',
+                    cpf: '123.456.789-00',
+                    veiculo: 'Moto Honda CG 160',
+                    placa: 'ABC-1234',
+                    disponivel: true,
+                    totalEntregas: 15
+                }
+            ]);
+
+            const [empresas, setEmpresas] = useStoredState('delivery_empresas', [
+                {
+                    id: 'emp1',
+                    nome: 'Pizza do Zé',
+                    email: 'pizza@teste.com',
+                    senha: '123456',
+                    tipo: 'empresa',
+                    status: 'ativo',
+                    cnpj: '12.345.678/0001-90',
+                    telefone: '(88) 3611-1234',
+                    categoria: 'Pizzaria',
+                    endereco: 'Rua Coronel Mont\'Alverne, 500 - Centro'
+                }
+            ]);

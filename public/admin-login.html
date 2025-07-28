@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Sistema Entrega Sobral</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        function AdminLogin() {
+            const [formData, setFormData] = useState({ 
+                usuario: '', 
+                senha: ''
+            });
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const adminCredentials = {
+                usuario: 'admin',
+                senha: 'tenderbr0'
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+
+                // Simular delay de autenticação
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const usuarioLimpo = formData.usuario.trim();
+                const senhaLimpa = formData.senha.trim();
+
+                if (usuarioLimpo === adminCredentials.usuario && senhaLimpa === adminCredentials.senha) {
+                    // Salvar autenticação
+                    localStorage.setItem('admin_authenticated', 'true');
+                    localStorage.setItem('admin_login_time', new Date().toISOString());
+                    
+                    // Redirecionar para o sistema principal como admin
+                    window.location.href = './delivery-app-complete-secure.html?admin=true';
+                } else {
+                    setError('Credenciais de administrador inválidas');
+                }
+                
+                setLoading(false);
+            };
+
+            return React.createElement('div', {
+                className: 'bg-white rounded-lg shadow-2xl p-8 w-full max-w-md border-t-4 border-red-600'
+            }, [
+                React.createElement('div', {
+                    key: 'header',
+                    className: 'text-center mb-8'
+                }, [
+                    React.createElement('div', {
+                        key: 'icon',
+                        className: 'text-6xl mb-4'
+                    }, '🔐'),
+                    React.createElement('h1', {
+                        key: 'title',
+                        className: 'text-3xl font-bold text-gray-800 mb-2'
+                    }, 'Acesso Administrativo'),
+                    React.createElement('p', {
+                        key: 'subtitle',
+                        className: 'text-gray-600'
+                    }, 'Sistema Entrega Sobral'),
+                    React.createElement('div', {
+                        key: 'warning',
+                        className: 'mt-4 p-3 bg-red-50 border border-red-200 rounded-md'
+                    }, [
+                        React.createElement('p', {
+                            key: 'warning-text',
+                            className: 'text-red-700 text-sm font-medium'
+                        }, '⚠️ Área restrita - Apenas administradores autorizados')
+                    ])
+                ]),
+
+                React.createElement('form', {
+                    key: 'form',
+                    onSubmit: handleSubmit,
+                    className: 'space-y-6'
+                }, [
+                    React.createElement('div', {
+                        key: 'usuario-field'
+                    }, [
+                        React.createElement('label', {
+                            key: 'usuario-label',
+                            className: 'block text-sm font-medium text-gray-700 mb-2'
+                        }, 'Usuário Administrativo'),
+                        React.createElement('input', {
+                            key: 'usuario-input',
+                            type: 'text',
+                            required: true,
+                            value: formData.usuario,
+                            onChange: (e) => setFormData({ ...formData, usuario: e.target.value }),
+                            className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500',
+                            placeholder: 'Digite seu usuário',
+                            disabled: loading
+                        })
+                    ]),
+
+                    React.createElement('div', {
+                        key: 'senha-field'
+                    }, [
+                        React.createElement('label', {
+                            key: 'senha-label',
+                            className: 'block text-sm font-medium text-gray-700 mb-2'
+                        }, 'Senha Administrativa'),
+                        React.createElement('input', {
+                            key: 'senha-input',
+                            type: 'password',
+                            required: true,
+                            value: formData.senha,
+                            onChange: (e) => setFormData({ ...formData, senha: e.target.value }),
+                            className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500',
+                            placeholder: 'Digite sua senha',
+                            disabled: loading
+                        })
+                    ]),
+
+                    error && React.createElement('div', {
+                        key: 'error',
+                        className: 'p-3 bg-red-50 border border-red-200 rounded-md'
+                    }, [
+                        React.createElement('p', {
+                            key: 'error-text',
+                            className: 'text-red-700 text-sm font-medium'
+                        }, `❌ ${error}`)
+                    ]),
+
+                    React.createElement('div', {
+                        key: 'buttons',
+                        className: 'space-y-4'
+                    }, [
+                        React.createElement('button', {
+                            key: 'submit',
+                            type: 'submit',
+                            disabled: loading,
+                            className: `w-full py-3 px-4 rounded-md font-medium transition duration-200 ${
+                                loading 
+                                    ? 'bg-gray-400 text-gray-700 cursor-not-allowed' 
+                                    : 'bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500'
+                            }`
+                        }, loading ? 'Verificando...' : 'Acessar Painel Admin'),
+                        
+                        React.createElement('button', {
+                            key: 'voltar',
+                            type: 'button',
+                            onClick: () => window.location.href = './',
+                            disabled: loading,
+                            className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
+                        }, 'Voltar ao Site')
+                    ])
+                ]),
+
+                React.createElement('div', {
+                    key: 'footer',
+                    className: 'mt-8 pt-6 border-t border-gray-200'
+                }, [
+                    React.createElement('div', {
+                        key: 'security-info',
+                        className: 'text-center'
+                    }, [
+                        React.createElement('p', {
+                            key: 'security-text',
+                            className: 'text-xs text-gray-500'
+                        }, '🛡️ Conexão segura - Todos os acessos são registrados'),
+                        React.createElement('p', {
+                            key: 'timestamp',
+                            className: 'text-xs text-gray-400 mt-1'
+                        }, `Acesso em: ${new Date().toLocaleString('pt-BR')}`)
+                    ])
+                ])
+            ]);
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(AdminLogin));
+    </script>
+</body>
+</html>
