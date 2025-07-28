@@ -163,14 +163,15 @@
                 ]);
             };
 
-            // Verificar se é acesso de administrador e restaurar sessão
+            // Sistema de Segurança por Links
             useEffect(() => {
                 const urlParams = new URLSearchParams(window.location.search);
+                const accessType = urlParams.get('access');
                 const isAdmin = urlParams.get('admin') === 'true';
                 const adminAuth = localStorage.getItem('admin_authenticated') === 'true';
                 
+                // Verificar acesso administrativo
                 if (isAdmin && adminAuth) {
-                    // Criar usuário admin temporário
                     const adminUser = {
                         id: 'admin1',
                         nome: 'Administrador',
@@ -179,8 +180,32 @@
                     };
                     setCurrentUser(adminUser);
                     setCurrentView('dashboard');
+                    return;
+                }
+                
+                // Sistema de segurança por tipo de acesso
+                if (accessType) {
+                    // Verificar se há usuário logado
+                    if (currentUser) {
+                        // Verificar se o tipo de acesso corresponde ao tipo do usuário
+                        if (accessType === 'cliente' && currentUser.tipo === 'consumidor') {
+                            setCurrentView('dashboard');
+                        } else if (accessType === 'empresa' && currentUser.tipo === 'empresa') {
+                            setCurrentView('dashboard');
+                        } else if (accessType === 'entregador' && currentUser.tipo === 'entregador') {
+                            setCurrentView('dashboard');
+                        } else {
+                            // Tipo de acesso não corresponde - fazer logout por segurança
+                            setCurrentUser(null);
+                            setCurrentView('login');
+                            addNotification('⚠️ Acesso negado! Faça login com o tipo de conta correto.', 'error');
+                        }
+                    } else {
+                        // Não há usuário logado - ir para login específico
+                        setCurrentView('login');
+                    }
                 } else if (currentUser) {
-                    // Se há um usuário logado, ir para o dashboard
+                    // Acesso sem parâmetro específico - verificar se há usuário logado
                     setCurrentView('dashboard');
                 }
             }, []);
@@ -353,7 +378,9 @@
 
             // Componente de Login com Botões Específicos
             const LoginForm = () => {
-                const [currentLoginType, setCurrentLoginType] = useState(null);
+                const urlParams = new URLSearchParams(window.location.search);
+                const accessType = urlParams.get('access');
+                const [currentLoginType, setCurrentLoginType] = useState(accessType || null);
                 const [formData, setFormData] = useState({ 
                     email: '', 
                     senha: ''
@@ -2772,8 +2799,20 @@
                                 React.createElement('button', {
                                     key: 'logout-btn',
                                     onClick: () => {
+                                        const userType = currentUser.tipo;
                                         setCurrentUser(null);
-                                        setCurrentView('home');
+                                        
+                                        // Redirecionar para link seguro baseado no tipo de usuário
+                                        if (userType === 'consumidor') {
+                                            window.location.href = window.location.origin + window.location.pathname + '?access=cliente';
+                                        } else if (userType === 'empresa') {
+                                            window.location.href = window.location.origin + window.location.pathname + '?access=empresa';
+                                        } else if (userType === 'entregador') {
+                                            window.location.href = window.location.origin + window.location.pathname + '?access=entregador';
+                                        } else {
+                                            setCurrentView('home');
+                                        }
+                                        
                                         addNotification('Logout realizado com sucesso!', 'success');
                                     },
                                     className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
