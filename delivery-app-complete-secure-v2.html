@@ -168,6 +168,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const accessType = urlParams.get('access');
                 const isAdmin = urlParams.get('admin') === 'true';
+                const isRegister = urlParams.get('register') === 'true';
                 const adminAuth = localStorage.getItem('admin_authenticated') === 'true';
                 
                 // Verificar acesso administrativo
@@ -180,6 +181,12 @@
                     };
                     setCurrentUser(adminUser);
                     setCurrentView('dashboard');
+                    return;
+                }
+                
+                // Verificar se é página de cadastro
+                if (isRegister) {
+                    setCurrentView('register-select');
                     return;
                 }
                 
@@ -422,14 +429,136 @@
                         ]),
 
                         React.createElement('div', {
+                            key: 'divider',
+                            className: 'mt-6 mb-4 text-center'
+                        }, [
+                            React.createElement('p', {
+                                key: 'text',
+                                className: 'text-gray-500 text-sm'
+                            }, 'ou cadastre-se como:')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'register-btn',
+                            className: 'mb-4'
+                        }, [
+                            React.createElement('button', {
+                                key: 'cadastrar',
+                                onClick: () => {
+                                    const baseUrl = window.location.origin + window.location.pathname;
+                                    const newUrl = baseUrl + '?register=true';
+                                    window.location.href = newUrl;
+                                },
+                                className: 'w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium'
+                            }, '📝 Fazer Cadastro')
+                        ]),
+
+                        React.createElement('div', {
                             key: 'back-btn',
-                            className: 'mt-6'
+                            className: 'mt-2'
                         }, [
                             React.createElement('button', {
                                 key: 'voltar',
                                 onClick: () => setCurrentView('home'),
                                 className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
                             }, 'Voltar ao Início')
+                        ])
+                    ])
+                );
+            };
+
+            // Componente de Seleção de Tipo de Cadastro
+            const RegisterSelectScreen = () => {
+                const redirectToRegister = (type) => {
+                    if (type === 'cliente') {
+                        setCurrentView('cadastro-consumidor');
+                    } else if (type === 'empresa') {
+                        setCurrentView('cadastro-empresa');
+                    } else if (type === 'entregador') {
+                        setCurrentView('cadastro-entregador');
+                    }
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, 
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-6xl mb-4'
+                            }, '🚚'),
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Sistema Entrega Sobral'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Plataforma completa de delivery')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'login-btn',
+                            className: 'mb-6'
+                        }, [
+                            React.createElement('button', {
+                                key: 'fazer-login',
+                                onClick: () => {
+                                    const baseUrl = window.location.origin + window.location.pathname;
+                                    window.location.href = baseUrl;
+                                },
+                                className: 'w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium'
+                            }, '🔑 Fazer Login')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'divider',
+                            className: 'text-center mb-6'
+                        }, [
+                            React.createElement('p', {
+                                key: 'text',
+                                className: 'text-gray-500 text-sm'
+                            }, 'ou cadastre-se como:')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'register-types',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('button', {
+                                key: 'empresa-btn',
+                                onClick: () => redirectToRegister('empresa'),
+                                className: 'w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                            }, '🏢 Empresa/Restaurante'),
+
+                            React.createElement('button', {
+                                key: 'entregador-btn',
+                                onClick: () => redirectToRegister('entregador'),
+                                className: 'w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 transition duration-200 font-medium'
+                            }, '🏍️ Entregador'),
+
+                            React.createElement('button', {
+                                key: 'cliente-btn',
+                                onClick: () => redirectToRegister('cliente'),
+                                className: 'w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition duration-200 font-medium'
+                            }, '👤 Cliente/Consumidor')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'admin-link',
+                            className: 'mt-6 pt-4 border-t border-gray-200 text-center'
+                        }, [
+                            React.createElement('a', {
+                                key: 'admin-access',
+                                href: './admin-login.html',
+                                className: 'text-xs text-gray-500 hover:text-gray-700 transition duration-200'
+                            }, '🔐 Acesso Administrativo')
                         ])
                     ])
                 );
@@ -3336,6 +3465,8 @@
                 return React.createElement(HomeScreen);
             } else if (currentView === 'select-type') {
                 return React.createElement(SelectTypeScreen);
+            } else if (currentView === 'register-select') {
+                return React.createElement(RegisterSelectScreen);
             } else if (currentView === 'login') {
                 return React.createElement(LoginForm);
             } else if (currentView === 'cadastro-empresa') {
