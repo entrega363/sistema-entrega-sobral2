@@ -1,96 +1,26 @@
 {
   "version": 2,
   "name": "sistema-entrega-sobral",
-  "builds": [
+  "rewrites": [
     {
-      "src": "*.html",
-      "use": "@vercel/static"
+      "source": "/",
+      "destination": "/index.html"
     },
     {
-      "src": "*.js",
-      "use": "@vercel/static"
+      "source": "/admin",
+      "destination": "/admin-login.html"
     },
     {
-      "src": "*.css",
-      "use": "@vercel/static"
+      "source": "/app",
+      "destination": "/delivery-app-complete.html"
     },
     {
-      "src": "*.sql",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/",
-      "dest": "/index.html"
+      "source": "/secure-v2",
+      "destination": "/delivery-app-complete-secure-v2.html"
     },
     {
-      "src": "/admin",
-      "dest": "/admin-login.html"
-    },
-    {
-      "src": "/app",
-      "dest": "/delivery-app-complete.html"
-    },
-    {
-      "src": "/v1",
-      "dest": "/delivery-app-enhanced-v1.html"
-    },
-    {
-      "src": "/v2",
-      "dest": "/delivery-app-enhanced-v2.html"
-    },
-    {
-      "src": "/v3",
-      "dest": "/delivery-app-enhanced-v3.html"
-    },
-    {
-      "src": "/v4",
-      "dest": "/delivery-app-enhanced-v4.html"
-    },
-    {
-      "src": "/pwa",
-      "dest": "/delivery-app-enhanced-v4.html"
-    },
-    {
-      "src": "/secure",
-      "dest": "/delivery-app-complete-secure.html"
-    },
-    {
-      "src": "/secure-v2",
-      "dest": "/delivery-app-complete-secure-v2.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/delivery-app-enhanced-v4.html",
-      "headers": [
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
+      "source": "/secure",
+      "destination": "/delivery-app-complete-secure.html"
     }
   ]
 }
