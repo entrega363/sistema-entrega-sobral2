@@ -3079,17 +3079,17 @@
                                     onClick: () => {
                                         const userType = currentUser.tipo;
                                         setCurrentUser(null);
-                                        setCurrentView('login');
                                         
                                         addNotification('Logout realizado com sucesso!', 'success');
                                         
-                                        // Atualizar URL sem recarregar a página
-                                        const newUrl = window.location.origin + window.location.pathname + 
+                                        // Redirecionar para link específico do tipo de usuário
+                                        const baseUrl = window.location.origin + window.location.pathname;
+                                        const newUrl = baseUrl + 
                                             (userType === 'consumidor' ? '?access=cliente' :
                                              userType === 'empresa' ? '?access=empresa' :
                                              userType === 'entregador' ? '?access=entregador' : '');
                                         
-                                        window.history.pushState({}, '', newUrl);
+                                        window.location.href = newUrl;
                                     },
                                     className: 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200'
                                 }, 'Sair')
