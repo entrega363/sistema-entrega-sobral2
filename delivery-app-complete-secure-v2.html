@@ -454,17 +454,13 @@
                         ]),
 
                         React.createElement('div', {
-                            key: 'back-btn',
-                            className: 'mt-2'
+                            key: 'footer-text',
+                            className: 'mt-4 text-center'
                         }, [
-                            React.createElement('button', {
-                                key: 'voltar',
-                                onClick: () => {
-                                    const baseUrl = window.location.origin + window.location.pathname;
-                                    window.location.href = baseUrl;
-                                },
-                                className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
-                            }, 'Voltar ao Início')
+                            React.createElement('p', {
+                                key: 'description',
+                                className: 'text-gray-500 text-sm'
+                            }, 'Conectando empresas, entregadores e consumidores em Sobral-CE')
                         ])
                     ])
                 );
