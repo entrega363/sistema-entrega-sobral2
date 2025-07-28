@@ -2129,6 +2129,209 @@
                 ]);
             };
 
+            // Componente de Cadastro de Entregador
+            const CadastroEntregador = () => {
+                const [formData, setFormData] = useState({
+                    nome: '',
+                    email: '',
+                    senha: '',
+                    telefone: '',
+                    cnh: '',
+                    veiculo: '',
+                    placa: ''
+                });
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    
+                    if (!formData.nome || !formData.email || !formData.senha || !formData.cnh) {
+                        addNotification('Por favor, preencha todos os campos obrigatórios!', 'error');
+                        return;
+                    }
+
+                    // Criar novo entregador
+                    const novoEntregador = {
+                        id: 'ent_' + Date.now(),
+                        tipo: 'entregador',
+                        ...formData,
+                        criadoEm: new Date().toLocaleString('pt-BR'),
+                        ativo: true,
+                        disponivel: true,
+                        avaliacaoMedia: 5.0,
+                        totalEntregas: 0
+                    };
+
+                    // Salvar no localStorage (simulando banco de dados)
+                    const entregadores = JSON.parse(localStorage.getItem('delivery_entregadores') || '[]');
+                    entregadores.push(novoEntregador);
+                    localStorage.setItem('delivery_entregadores', JSON.stringify(entregadores));
+
+                    addNotification('Cadastro de entregador realizado com sucesso!', 'success');
+                    setCurrentView('login');
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, [
+                    React.createElement('div', {
+                        key: 'form-container',
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-900'
+                            }, '🏍️ Cadastro de Entregador'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600 mt-2'
+                            }, 'Junte-se à nossa equipe de entregadores')
+                        ]),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('div', {
+                                key: 'nome-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'nome-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Nome Completo *'),
+                                React.createElement('input', {
+                                    key: 'nome-input',
+                                    type: 'text',
+                                    value: formData.nome,
+                                    onChange: (e) => setFormData({...formData, nome: e.target.value}),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
+                                    placeholder: 'Digite seu nome completo'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'email-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'email-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Email *'),
+                                React.createElement('input', {
+                                    key: 'email-input',
+                                    type: 'email',
+                                    value: formData.email,
+                                    onChange: (e) => setFormData({...formData, email: e.target.value}),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
+                                    placeholder: 'Digite seu email'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'senha-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'senha-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Senha *'),
+                                React.createElement('input', {
+                                    key: 'senha-input',
+                                    type: 'password',
+                                    value: formData.senha,
+                                    onChange: (e) => setFormData({...formData, senha: e.target.value}),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
+                                    placeholder: 'Digite sua senha'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'telefone-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'telefone-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Telefone'),
+                                React.createElement('input', {
+                                    key: 'telefone-input',
+                                    type: 'tel',
+                                    value: formData.telefone,
+                                    onChange: (e) => setFormData({...formData, telefone: e.target.value}),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
+                                    placeholder: '(85) 99999-9999'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'cnh-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'cnh-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'CNH *'),
+                                React.createElement('input', {
+                                    key: 'cnh-input',
+                                    type: 'text',
+                                    value: formData.cnh,
+                                    onChange: (e) => setFormData({...formData, cnh: e.target.value}),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
+                                    placeholder: 'Número da CNH'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'veiculo-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'veiculo-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Veículo'),
+                                React.createElement('input', {
+                                    key: 'veiculo-input',
+                                    type: 'text',
+                                    value: formData.veiculo,
+                                    onChange: (e) => setFormData({...formData, veiculo: e.target.value}),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
+                                    placeholder: 'Ex: Moto Honda CG 160'
+                                })
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'placa-field'
+                            }, [
+                                React.createElement('label', {
+                                    key: 'placa-label',
+                                    className: 'block text-sm font-medium text-gray-700 mb-2'
+                                }, 'Placa do Veículo'),
+                                React.createElement('input', {
+                                    key: 'placa-input',
+                                    type: 'text',
+                                    value: formData.placa,
+                                    onChange: (e) => setFormData({...formData, placa: e.target.value.toUpperCase()}),
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500',
+                                    placeholder: 'ABC-1234'
+                                })
+                            ]),
+
+                            React.createElement('button', {
+                                key: 'submit-btn',
+                                type: 'submit',
+                                className: 'w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 transition duration-200 font-medium'
+                            }, '✅ Cadastrar como Entregador'),
+
+                            React.createElement('button', {
+                                key: 'back-btn',
+                                type: 'button',
+                                onClick: () => setCurrentView('home'),
+                                className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
+                            }, '← Voltar')
+                        ])
+                    ])
+                ]);
+            };
+
             // Renderização principal
             if (currentView === 'home') {
                 return React.createElement(HomeScreen);
@@ -2138,6 +2341,8 @@
                 return React.createElement(CadastroEmpresa);
             } else if (currentView === 'cadastro-consumidor') {
                 return React.createElement(CadastroConsumidor);
+            } else if (currentView === 'cadastro-entregador') {
+                return React.createElement(CadastroEntregador);
             } else if (currentView === 'dashboard') {
                 return React.createElement('div', {
                     className: 'min-h-screen bg-gray-100'
