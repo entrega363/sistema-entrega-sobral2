@@ -2225,6 +2225,465 @@
                 ]);
             };
 
+            // Dashboard do Administrador
+            const AdminDashboard = () => {
+                const [activeTab, setActiveTab] = useState('overview');
+
+                // Estatísticas gerais do sistema
+                const totalEmpresas = empresas.length;
+                const empresasAtivas = empresas.filter(e => e.status === 'ativo').length;
+                const totalConsumidores = consumidores.length;
+                const totalEntregadores = users.filter(u => u.tipo === 'entregador').length;
+                const totalPedidos = pedidos.length;
+                const pedidosHoje = pedidos.filter(p => {
+                    const hoje = new Date().toDateString();
+                    return new Date(p.criadoEm).toDateString() === hoje;
+                }).length;
+                const faturamentoTotal = pedidos.reduce((total, p) => total + p.valor, 0);
+
+                return React.createElement('div', {
+                    className: 'max-w-7xl mx-auto p-6'
+                }, [
+                    // Header do admin
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white p-6 rounded-lg shadow-md mb-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-content',
+                            className: 'text-center'
+                        }, [
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800'
+                            }, '👨‍💼 Painel Administrativo'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600 mt-2'
+                            }, 'Sistema Entrega Sobral - Controle Total')
+                        ])
+                    ]),
+
+                    // Estatísticas principais
+                    React.createElement('div', {
+                        key: 'stats',
+                        className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'empresas-card',
+                            className: 'bg-gradient-to-r from-blue-400 to-blue-600 p-6 rounded-lg shadow-md text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-3xl mb-2'
+                            }, '🏢'),
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold'
+                            }, 'Empresas'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-2xl font-bold'
+                            }, `${empresasAtivas}/${totalEmpresas}`),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-sm opacity-90'
+                            }, 'Ativas/Total')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'consumidores-card',
+                            className: 'bg-gradient-to-r from-green-400 to-green-600 p-6 rounded-lg shadow-md text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-3xl mb-2'
+                            }, '👤'),
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold'
+                            }, 'Consumidores'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-2xl font-bold'
+                            }, totalConsumidores)
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'entregadores-card',
+                            className: 'bg-gradient-to-r from-orange-400 to-orange-600 p-6 rounded-lg shadow-md text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-3xl mb-2'
+                            }, '🏍️'),
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold'
+                            }, 'Entregadores'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-2xl font-bold'
+                            }, totalEntregadores)
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'pedidos-card',
+                            className: 'bg-gradient-to-r from-purple-400 to-purple-600 p-6 rounded-lg shadow-md text-white'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-3xl mb-2'
+                            }, '📦'),
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold'
+                            }, 'Pedidos'),
+                            React.createElement('p', {
+                                key: 'value',
+                                className: 'text-2xl font-bold'
+                            }, `${pedidosHoje}/${totalPedidos}`),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-sm opacity-90'
+                            }, 'Hoje/Total')
+                        ])
+                    ]),
+
+                    // Tabs de navegação
+                    React.createElement('div', {
+                        key: 'tabs',
+                        className: 'bg-white border-b border-gray-200 rounded-t-lg'
+                    }, [
+                        React.createElement('div', {
+                            key: 'tab-list',
+                            className: 'flex space-x-8 px-6'
+                        }, [
+                            React.createElement('button', {
+                                key: 'overview-tab',
+                                onClick: () => setActiveTab('overview'),
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'overview' 
+                                        ? 'border-purple-500 text-purple-600' 
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                            }, '📊 Visão Geral'),
+                            React.createElement('button', {
+                                key: 'empresas-tab',
+                                onClick: () => setActiveTab('empresas'),
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'empresas' 
+                                        ? 'border-purple-500 text-purple-600' 
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                            }, '🏢 Empresas'),
+                            React.createElement('button', {
+                                key: 'usuarios-tab',
+                                onClick: () => setActiveTab('usuarios'),
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'usuarios' 
+                                        ? 'border-purple-500 text-purple-600' 
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                            }, '👥 Usuários'),
+                            React.createElement('button', {
+                                key: 'pedidos-tab',
+                                onClick: () => setActiveTab('pedidos'),
+                                className: `py-4 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'pedidos' 
+                                        ? 'border-purple-500 text-purple-600' 
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`
+                            }, '📦 Pedidos')
+                        ])
+                    ]),
+
+                    // Conteúdo das tabs
+                    React.createElement('div', {
+                        key: 'tab-content',
+                        className: 'bg-white rounded-b-lg shadow-md p-6'
+                    }, [
+                        // Tab Overview
+                        activeTab === 'overview' && React.createElement('div', {
+                            key: 'overview-content',
+                            className: 'space-y-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, '📊 Resumo do Sistema'),
+                            
+                            React.createElement('div', {
+                                key: 'summary-grid',
+                                className: 'grid grid-cols-1 md:grid-cols-2 gap-6'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'financial-summary',
+                                    className: 'bg-green-50 p-6 rounded-lg border-l-4 border-green-500'
+                                }, [
+                                    React.createElement('h3', {
+                                        key: 'title',
+                                        className: 'text-lg font-semibold text-green-800 mb-3'
+                                    }, '💰 Resumo Financeiro'),
+                                    React.createElement('p', {
+                                        key: 'total',
+                                        className: 'text-3xl font-bold text-green-600'
+                                    }, `R$ ${faturamentoTotal.toFixed(2)}`),
+                                    React.createElement('p', {
+                                        key: 'subtitle',
+                                        className: 'text-green-700 mt-1'
+                                    }, 'Faturamento Total')
+                                ]),
+
+                                React.createElement('div', {
+                                    key: 'activity-summary',
+                                    className: 'bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500'
+                                }, [
+                                    React.createElement('h3', {
+                                        key: 'title',
+                                        className: 'text-lg font-semibold text-blue-800 mb-3'
+                                    }, '📈 Atividade Hoje'),
+                                    React.createElement('p', {
+                                        key: 'pedidos',
+                                        className: 'text-2xl font-bold text-blue-600'
+                                    }, `${pedidosHoje} pedidos`),
+                                    React.createElement('p', {
+                                        key: 'empresas',
+                                        className: 'text-blue-700 mt-1'
+                                    }, `${empresasAtivas} empresas ativas`)
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'recent-activity',
+                                className: 'bg-gray-50 p-6 rounded-lg'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'text-lg font-semibold text-gray-800 mb-4'
+                                }, '🕒 Atividade Recente'),
+                                React.createElement('div', {
+                                    key: 'activity-list',
+                                    className: 'space-y-2'
+                                }, pedidos.slice(0, 5).map(pedido => 
+                                    React.createElement('div', {
+                                        key: pedido.id,
+                                        className: 'flex justify-between items-center p-2 bg-white rounded'
+                                    }, [
+                                        React.createElement('span', {
+                                            key: 'info',
+                                            className: 'text-sm text-gray-700'
+                                        }, `Pedido #${pedido.id.slice(-4)} - ${pedido.cliente}`),
+                                        React.createElement('span', {
+                                            key: 'valor',
+                                            className: 'text-sm font-medium text-green-600'
+                                        }, `R$ ${pedido.valor.toFixed(2)}`)
+                                    ])
+                                ))
+                            ])
+                        ]),
+
+                        // Tab Empresas
+                        activeTab === 'empresas' && React.createElement('div', {
+                            key: 'empresas-content',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, '🏢 Gerenciar Empresas'),
+                            
+                            React.createElement('div', {
+                                key: 'empresas-list',
+                                className: 'space-y-4'
+                            }, empresas.map(empresa => 
+                                React.createElement('div', {
+                                    key: empresa.id,
+                                    className: 'border border-gray-200 rounded-lg p-4'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'header',
+                                        className: 'flex justify-between items-start'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'info'
+                                        }, [
+                                            React.createElement('h3', {
+                                                key: 'nome',
+                                                className: 'font-semibold text-gray-800'
+                                            }, empresa.nome),
+                                            React.createElement('p', {
+                                                key: 'categoria',
+                                                className: 'text-sm text-gray-600'
+                                            }, empresa.categoria),
+                                            React.createElement('p', {
+                                                key: 'endereco',
+                                                className: 'text-sm text-gray-500'
+                                            }, empresa.endereco)
+                                        ]),
+                                        React.createElement('span', {
+                                            key: 'status',
+                                            className: `px-3 py-1 rounded-full text-sm font-medium ${
+                                                empresa.status === 'ativo' ? 'bg-green-100 text-green-800' :
+                                                empresa.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
+                                                'bg-red-100 text-red-800'
+                                            }`
+                                        }, empresa.status.toUpperCase())
+                                    ])
+                                ])
+                            ))
+                        ]),
+
+                        // Tab Usuários
+                        activeTab === 'usuarios' && React.createElement('div', {
+                            key: 'usuarios-content',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, '👥 Gerenciar Usuários'),
+                            
+                            React.createElement('div', {
+                                key: 'stats-row',
+                                className: 'grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'consumidores-stat',
+                                    className: 'bg-blue-50 p-4 rounded-lg text-center'
+                                }, [
+                                    React.createElement('p', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-blue-600'
+                                    }, totalConsumidores),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-blue-800'
+                                    }, 'Consumidores')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'entregadores-stat',
+                                    className: 'bg-orange-50 p-4 rounded-lg text-center'
+                                }, [
+                                    React.createElement('p', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-orange-600'
+                                    }, totalEntregadores),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-orange-800'
+                                    }, 'Entregadores')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'empresas-stat',
+                                    className: 'bg-green-50 p-4 rounded-lg text-center'
+                                }, [
+                                    React.createElement('p', {
+                                        key: 'number',
+                                        className: 'text-2xl font-bold text-green-600'
+                                    }, totalEmpresas),
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'text-green-800'
+                                    }, 'Empresas')
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'users-list',
+                                className: 'bg-gray-50 p-4 rounded-lg'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'title',
+                                    className: 'font-semibold text-gray-800 mb-3'
+                                }, 'Usuários Recentes'),
+                                React.createElement('div', {
+                                    key: 'list',
+                                    className: 'space-y-2'
+                                }, [...consumidores, ...users].slice(0, 10).map(user => 
+                                    React.createElement('div', {
+                                        key: user.id,
+                                        className: 'flex justify-between items-center p-2 bg-white rounded'
+                                    }, [
+                                        React.createElement('span', {
+                                            key: 'info',
+                                            className: 'text-sm text-gray-700'
+                                        }, `${user.nome} (${user.tipo || 'consumidor'})`),
+                                        React.createElement('span', {
+                                            key: 'email',
+                                            className: 'text-sm text-gray-500'
+                                        }, user.email)
+                                    ])
+                                ))
+                            ])
+                        ]),
+
+                        // Tab Pedidos
+                        activeTab === 'pedidos' && React.createElement('div', {
+                            key: 'pedidos-content',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold text-gray-800'
+                            }, '📦 Gerenciar Pedidos'),
+                            
+                            React.createElement('div', {
+                                key: 'pedidos-list',
+                                className: 'space-y-4'
+                            }, pedidos.slice(0, 10).map(pedido => 
+                                React.createElement('div', {
+                                    key: pedido.id,
+                                    className: 'border border-gray-200 rounded-lg p-4'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'header',
+                                        className: 'flex justify-between items-start mb-2'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'info'
+                                        }, [
+                                            React.createElement('h3', {
+                                                key: 'id',
+                                                className: 'font-semibold text-gray-800'
+                                            }, `Pedido #${pedido.id.slice(-4)}`),
+                                            React.createElement('p', {
+                                                key: 'cliente',
+                                                className: 'text-sm text-gray-600'
+                                            }, `${pedido.cliente} → ${pedido.empresaNome}`)
+                                        ]),
+                                        React.createElement('div', {
+                                            key: 'status-valor',
+                                            className: 'text-right'
+                                        }, [
+                                            React.createElement('span', {
+                                                key: 'status',
+                                                className: `px-3 py-1 rounded-full text-sm font-medium ${
+                                                    pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
+                                                    pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
+                                                    pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                    pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
+                                                    pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
+                                                    'bg-gray-100 text-gray-800'
+                                                }`
+                                            }, pedido.status.replace('_', ' ').toUpperCase()),
+                                            React.createElement('p', {
+                                                key: 'valor',
+                                                className: 'text-lg font-bold text-green-600 mt-1'
+                                            }, `R$ ${pedido.valor.toFixed(2)}`)
+                                        ])
+                                    ]),
+                                    React.createElement('p', {
+                                        key: 'items',
+                                        className: 'text-sm text-gray-600'
+                                    }, `Itens: ${pedido.items}`)
+                                ])
+                            ))
+                        ])
+                    ])
+                ]);
+            };
+
             // Dashboard simples para outros tipos de usuário
             const SimpleDashboard = () => {
                 return React.createElement('div', {
@@ -2715,6 +3174,7 @@
                         currentUser.tipo === 'consumidor' ? React.createElement(ConsumidorDashboard) :
                         currentUser.tipo === 'empresa' ? React.createElement(EmpresaDashboard) :
                         currentUser.tipo === 'entregador' ? React.createElement(EntregadorDashboard) :
+                        currentUser.tipo === 'admin' ? React.createElement(AdminDashboard) :
                         React.createElement(SimpleDashboard)
                     ])
                 ]);
