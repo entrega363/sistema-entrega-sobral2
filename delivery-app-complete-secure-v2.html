@@ -38,7 +38,7 @@
 
         function App() {
             const [currentView, setCurrentView] = useState('home');
-            const [currentUser, setCurrentUser] = useState(null);
+            const [currentUser, setCurrentUser] = useStoredState('current_user', null);
             const [notifications, setNotifications] = useStoredState('notifications', []);
             const [showNotifications, setShowNotifications] = useState(false);
 
@@ -163,7 +163,7 @@
                 ]);
             };
 
-            // Verificar se é acesso de administrador
+            // Verificar se é acesso de administrador e restaurar sessão
             useEffect(() => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const isAdmin = urlParams.get('admin') === 'true';
@@ -178,6 +178,9 @@
                         tipo: 'admin'
                     };
                     setCurrentUser(adminUser);
+                    setCurrentView('dashboard');
+                } else if (currentUser) {
+                    // Se há um usuário logado, ir para o dashboard
                     setCurrentView('dashboard');
                 }
             }, []);
