@@ -207,6 +207,9 @@
                 } else if (currentUser) {
                     // Acesso sem parâmetro específico - verificar se há usuário logado
                     setCurrentView('dashboard');
+                } else {
+                    // Sem parâmetros e sem usuário logado - mostrar seleção de tipo
+                    setCurrentView('select-type');
                 }
             }, []);
 
@@ -301,7 +304,136 @@
                     senha: 'tenderbr0',
                     tipo: 'admin'
                 }
-            ];           
+            ];
+
+            // Componente de Seleção de Tipo de Usuário
+            const SelectTypeScreen = () => {
+                const redirectToLogin = (type) => {
+                    const baseUrl = window.location.origin + window.location.pathname;
+                    const newUrl = baseUrl + '?access=' + type;
+                    window.location.href = newUrl;
+                };
+
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, 
+                    React.createElement('div', {
+                        className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: 'text-6xl mb-4'
+                            }, '🚚'),
+                            React.createElement('h1', {
+                                key: 'title',
+                                className: 'text-3xl font-bold text-gray-800 mb-2'
+                            }, 'Entrar no Sistema'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, 'Escolha seu tipo de acesso')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'user-types',
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('button', {
+                                key: 'cliente-btn',
+                                onClick: () => redirectToLogin('cliente'),
+                                className: 'w-full p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition duration-200 text-left'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'flex items-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-3xl mr-4'
+                                    }, '👤'),
+                                    React.createElement('div', { key: 'text' }, [
+                                        React.createElement('h3', {
+                                            key: 'title',
+                                            className: 'text-lg font-semibold text-gray-800'
+                                        }, 'Sou Cliente'),
+                                        React.createElement('p', {
+                                            key: 'desc',
+                                            className: 'text-sm text-gray-600'
+                                        }, 'Faça pedidos e acompanhe entregas')
+                                    ])
+                                ])
+                            ]),
+
+                            React.createElement('button', {
+                                key: 'empresa-btn',
+                                onClick: () => redirectToLogin('empresa'),
+                                className: 'w-full p-4 border-2 border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition duration-200 text-left'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'flex items-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-3xl mr-4'
+                                    }, '🏢'),
+                                    React.createElement('div', { key: 'text' }, [
+                                        React.createElement('h3', {
+                                            key: 'title',
+                                            className: 'text-lg font-semibold text-gray-800'
+                                        }, 'Sou Empresa'),
+                                        React.createElement('p', {
+                                            key: 'desc',
+                                            className: 'text-sm text-gray-600'
+                                        }, 'Gerencie seu restaurante e pedidos')
+                                    ])
+                                ])
+                            ]),
+
+                            React.createElement('button', {
+                                key: 'entregador-btn',
+                                onClick: () => redirectToLogin('entregador'),
+                                className: 'w-full p-4 border-2 border-orange-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition duration-200 text-left'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'flex items-center'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'icon',
+                                        className: 'text-3xl mr-4'
+                                    }, '🏍️'),
+                                    React.createElement('div', { key: 'text' }, [
+                                        React.createElement('h3', {
+                                            key: 'title',
+                                            className: 'text-lg font-semibold text-gray-800'
+                                        }, 'Sou Entregador'),
+                                        React.createElement('p', {
+                                            key: 'desc',
+                                            className: 'text-sm text-gray-600'
+                                        }, 'Aceite entregas e ganhe dinheiro')
+                                    ])
+                                ])
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'back-btn',
+                            className: 'mt-6'
+                        }, [
+                            React.createElement('button', {
+                                key: 'voltar',
+                                onClick: () => setCurrentView('home'),
+                                className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
+                            }, 'Voltar ao Início')
+                        ])
+                    ])
+                );
+            };           
  // Tela inicial com opções
             const HomeScreen = () => {
                 return React.createElement('div', {
@@ -3191,6 +3323,8 @@
             // Renderização principal
             if (currentView === 'home') {
                 return React.createElement(HomeScreen);
+            } else if (currentView === 'select-type') {
+                return React.createElement(SelectTypeScreen);
             } else if (currentView === 'login') {
                 return React.createElement(LoginForm);
             } else if (currentView === 'cadastro-empresa') {
