@@ -1362,28 +1362,8 @@
                                                 // Imagem do produto
                                                 React.createElement('div', {
                                                     key: 'imagem-produto',
-                                                    className: 'flex-shrink-0'
-                                                }, produto.tipoImagem === 'emoji' || !produto.tipoImagem ? 
-                                                    React.createElement('div', {
-                                                        key: 'emoji',
-                                                        className: 'text-2xl'
-                                                    }, produto.imagem || '🍽️') :
-                                                    React.createElement('img', {
-                                                        key: 'imagem-url',
-                                                        src: produto.imagem,
-                                                        alt: produto.nome,
-                                                        className: 'w-12 h-12 object-cover rounded-lg border border-gray-200',
-                                                        onError: (e) => {
-                                                            e.target.style.display = 'none';
-                                                            e.target.nextSibling.style.display = 'block';
-                                                        }
-                                                    }),
-                                                    produto.tipoImagem !== 'emoji' && produto.tipoImagem && React.createElement('div', {
-                                                        key: 'fallback-emoji',
-                                                        className: 'text-2xl',
-                                                        style: { display: 'none' }
-                                                    }, '🍽️')
-                                                ),
+                                                    className: 'flex-shrink-0 text-2xl'
+                                                }, produto.imagem || '🍽️'),
                                                 // Informações do produto
                                                 React.createElement('div', { 
                                                     key: 'info',
