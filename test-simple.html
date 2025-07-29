@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Sistema Entrega Sobral</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <script>
+        const { useState } = React;
+        const { createRoot } = ReactDOM;
+
+        function App() {
+            const [currentView, setCurrentView] = useState('home');
+
+            const HomeScreen = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, React.createElement('div', {
+                    className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'text-center mb-8'
+                    }, [
+                        React.createElement('div', {
+                            key: 'icon',
+                            className: 'text-6xl mb-4'
+                        }, '🚚'),
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: 'text-3xl font-bold text-gray-800 mb-2'
+                        }, 'Sistema Entrega Sobral'),
+                        React.createElement('p', {
+                            key: 'subtitle',
+                            className: 'text-gray-600'
+                        }, 'Plataforma completa de delivery')
+                    ]),
+                    React.createElement('div', {
+                        key: 'buttons',
+                        className: 'space-y-4'
+                    }, [
+                        React.createElement('button', {
+                            key: 'cliente',
+                            onClick: () => alert('Sistema funcionando!'),
+                            className: 'w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition duration-200 font-medium'
+                        }, '👤 Sou Cliente'),
+                        React.createElement('button', {
+                            key: 'empresa',
+                            onClick: () => alert('Sistema funcionando!'),
+                            className: 'w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                        }, '🏢 Sou Empresa'),
+                        React.createElement('button', {
+                            key: 'entregador',
+                            onClick: () => alert('Sistema funcionando!'),
+                            className: 'w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 transition duration-200 font-medium'
+                        }, '🏍️ Sou Entregador')
+                    ])
+                ]));
+            };
+
+            return React.createElement(HomeScreen);
+        }
+
+        // Aguardar carregamento
+        window.addEventListener('load', function() {
+            try {
+                const rootElement = document.getElementById('root');
+                if (rootElement && React && ReactDOM) {
+                    const root = createRoot(rootElement);
+                    root.render(React.createElement(App));
+                    console.log('✅ Aplicação carregada com sucesso!');
+                } else {
+                    throw new Error('Elementos necessários não encontrados');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar:', error);
+                document.getElementById('root').innerHTML = 
+                    '<div style="color: white; text-align: center; padding: 50px; font-family: Arial;">' +
+                    '<h1>⚠️ Erro de Carregamento</h1>' +
+                    '<p>Verifique o console para mais detalhes.</p>' +
+                    '</div>';
+            }
+        });
+    </script>
+</body>
+</html>
