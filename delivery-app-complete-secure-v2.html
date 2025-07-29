@@ -1238,166 +1238,57 @@
                 };
 
                 const renderMarketplace = () => {
-                    // Usar produtos reais em vez de exemplos
-                    const produtosExemplo = [
-                        { nome: 'Pizza Margherita', preco: 25.90, descricao: 'Molho de tomate, mussarela, manjericão', imagem: '🍕' },
-                        { nome: 'Pizza Calabresa', preco: 28.90, descricao: 'Molho de tomate, mussarela, calabresa, cebola', imagem: '🍕' },
-                        { nome: 'Pizza Portuguesa', preco: 32.90, descricao: 'Molho de tomate, mussarela, presunto, ovos', imagem: '🍕' },
-                        { nome: 'Coca-Cola 2L', preco: 8.90, descricao: 'Refrigerante Coca-Cola 2 litros', imagem: '🥤' }
-                    ];
-
                     return React.createElement('div', {
-                        className: 'space-y-6'
+                        className: 'bg-white p-6 rounded-lg shadow-md'
                     }, [
-                        // Carrinho
-                        carrinho.length > 0 && React.createElement('div', {
-                            key: 'carrinho',
-                            className: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500'
-                        }, [
-                            React.createElement('h3', {
-                                key: 'title',
-                                className: 'text-xl font-bold text-gray-800 mb-4'
-                            }, '🛒 Seu Carrinho'),
+                        React.createElement('h3', {
+                            key: 'title',
+                            className: 'text-xl font-bold text-gray-800 mb-6'
+                        }, '🛒 Marketplace'),
+                        
+                        React.createElement('div', {
+                            key: 'empresas',
+                            className: 'space-y-6'
+                        }, empresasAtivas.map(empresa => 
                             React.createElement('div', {
-                                key: 'items',
-                                className: 'space-y-2 mb-4'
-                            }, carrinho.map(item =>
+                                key: empresa.id,
+                                className: 'border border-gray-200 p-4 rounded-lg'
+                            }, [
+                                React.createElement('h4', {
+                                    key: 'nome',
+                                    className: 'text-lg font-semibold mb-2'
+                                }, empresa.nome),
+                                React.createElement('p', {
+                                    key: 'categoria',
+                                    className: 'text-gray-600 mb-4'
+                                }, empresa.categoria),
+                                
                                 React.createElement('div', {
-                                    key: item.id,
-                                    className: 'flex justify-between items-center p-2 bg-gray-50 rounded'
+                                    key: 'produtos',
+                                    className: 'space-y-2'
                                 }, [
-                                    React.createElement('span', {
-                                        key: 'nome',
-                                        className: 'font-medium'
-                                    }, `${item.quantidade}x ${item.nome}`),
                                     React.createElement('div', {
-                                        key: 'actions',
-                                        className: 'flex items-center space-x-2'
+                                        key: 'produto1',
+                                        className: 'flex justify-between items-center p-2 bg-gray-50 rounded'
                                     }, [
+                                        React.createElement('div', { key: 'info' }, [
+                                            React.createElement('span', {
+                                                key: 'emoji',
+                                                className: 'text-xl mr-2'
+                                            }, '🍕'),
+                                            React.createElement('span', {
+                                                key: 'nome',
+                                                className: 'font-medium'
+                                            }, 'Pizza Margherita')
+                                        ]),
                                         React.createElement('span', {
                                             key: 'preco',
                                             className: 'text-green-600 font-bold'
-                                        }, `R$ ${(item.preco * item.quantidade).toFixed(2)}`),
-                                        React.createElement('button', {
-                                            key: 'remover',
-                                            onClick: () => removerDoCarrinho(item.id),
-                                            className: 'text-red-600 hover:text-red-800'
-                                        }, '❌')
+                                        }, 'R$ 25,90')
                                     ])
                                 ])
-                            )),
-                            React.createElement('div', {
-                                key: 'total',
-                                className: 'flex justify-between items-center pt-4 border-t'
-                            }, [
-                                React.createElement('span', {
-                                    key: 'label',
-                                    className: 'text-lg font-bold'
-                                }, 'Total + Taxa:'),
-                                React.createElement('span', {
-                                    key: 'valor',
-                                    className: 'text-xl font-bold text-green-600'
-                                }, `R$ ${(carrinho.reduce((total, item) => total + (item.preco * item.quantidade), 0) + 5.00).toFixed(2)}`)
-                            ]),
-                            React.createElement('button', {
-                                key: 'finalizar',
-                                onClick: finalizarPedido,
-                                className: 'w-full mt-4 bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
-                            }, '🛒 Finalizar Pedido')
-                        ]),
-
-                        // Lista de empresas
-                        React.createElement('div', {
-                            key: 'empresas',
-                            className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-                        }, empresasAtivas.map(empresa => {
-                            return React.createElement('div', {
-                                key: empresa.id,
-                                className: 'bg-white p-6 rounded-lg shadow-md'
-                            }, [
-                                React.createElement('div', {
-                                    key: 'header',
-                                    className: 'mb-4'
-                                }, [
-                                    React.createElement('h3', {
-                                        key: 'nome',
-                                        className: 'text-xl font-bold text-gray-800'
-                                    }, empresa.nome),
-                                    React.createElement('p', {
-                                        key: 'categoria',
-                                        className: 'text-gray-600'
-                                    }, empresa.categoria),
-                                    React.createElement('div', {
-                                        key: 'info',
-                                        className: 'flex justify-between items-center mt-2'
-                                    }, [
-                                        React.createElement('span', {
-                                            key: 'avaliacao',
-                                            className: 'text-yellow-500'
-                                        }, `⭐ ${empresa.avaliacaoMedia || 0}/5`),
-                                        React.createElement('span', {
-                                            key: 'tempo',
-                                            className: 'text-gray-500 text-sm'
-                                        }, empresa.tempoEntrega)
-                                    ])
-                                ]),
-
-                                React.createElement('div', {
-                                    key: 'produtos',
-                                    className: 'space-y-3'
-                                }, (() => {
-                                    // Buscar produtos reais da empresa ou usar exemplos se não houver
-                                    const produtosEmpresa = produtos.filter(p => p.empresaId === empresa.id && p.disponivel);
-                                    const produtosParaExibir = produtosEmpresa.length > 0 ? produtosEmpresa : produtosExemplo;
-                                    
-                                    return produtosParaExibir.map((produto, index) =>
-                                        React.createElement('div', {
-                                            key: produto.id || index,
-                                            className: 'border border-gray-200 p-3 rounded-lg'
-                                        }, [
-                                            React.createElement('div', {
-                                                key: 'produto-header',
-                                                className: 'flex items-start space-x-3 mb-2'
-                                            }, [
-                                                // Imagem do produto
-                                                React.createElement('div', {
-                                                    key: 'imagem-produto',
-                                                    className: 'flex-shrink-0 text-2xl'
-                                                }, produto.imagem || '🍽️'),
-                                                // Informações do produto
-                                                React.createElement('div', { 
-                                                    key: 'info',
-                                                    className: 'flex-1'
-                                                }, [
-                                                    React.createElement('h4', {
-                                                        key: 'nome',
-                                                        className: 'font-semibold'
-                                                    }, produto.nome),
-                                                    React.createElement('p', {
-                                                        key: 'descricao',
-                                                        className: 'text-gray-600 text-sm'
-                                                    }, produto.descricao),
-                                                    produto.categoria && React.createElement('span', {
-                                                        key: 'categoria',
-                                                        className: 'inline-block mt-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full'
-                                                    }, produto.categoria)
-                                                ]),
-                                                // Preço
-                                                React.createElement('span', {
-                                                    key: 'preco',
-                                                    className: 'font-bold text-green-600'
-                                                }, `R$ ${produto.preco.toFixed(2)}`)
-                                            ]),
-                                            React.createElement('button', {
-                                                key: 'adicionar',
-                                                onClick: () => adicionarAoCarrinho(empresa, produto),
-                                                className: 'w-full bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition duration-200 text-sm'
-                                            }, '➕ Adicionar ao Carrinho')
-                                        ])
-                                    );
-                                })())
-                            ]);
-                        }))
+                            ])
+                        ))
                     ]);
                 };
 
