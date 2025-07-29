@@ -1543,7 +1543,9 @@
                     descricao: '',
                     preco: '',
                     categoria: '',
-                    imagem: '🍽️'
+                    imagem: '🍽️',
+                    imagemUrl: '',
+                    tipoImagem: 'emoji' // 'emoji', 'url', 'upload'
                 });
 
                 const pedidosEmpresa = pedidos.filter(p => p.empresaId === currentUser.id);
@@ -1756,17 +1758,37 @@
                 const adicionarProduto = () => {
                     if (!novoProduto.nome || !novoProduto.preco) return;
 
+                    // Determinar a imagem final baseada no tipo selecionado
+                    let imagemFinal = '🍽️';
+                    if (novoProduto.tipoImagem === 'emoji' && novoProduto.imagem) {
+                        imagemFinal = novoProduto.imagem;
+                    } else if ((novoProduto.tipoImagem === 'url' || novoProduto.tipoImagem === 'upload') && novoProduto.imagemUrl) {
+                        imagemFinal = novoProduto.imagemUrl;
+                    }
+
                     const produto = {
                         id: 'prod_' + Date.now(),
                         empresaId: currentUser.id,
-                        ...novoProduto,
+                        nome: novoProduto.nome,
+                        descricao: novoProduto.descricao,
                         preco: parseFloat(novoProduto.preco),
+                        categoria: novoProduto.categoria,
+                        imagem: imagemFinal,
+                        tipoImagem: novoProduto.tipoImagem,
                         disponivel: true,
                         criadoEm: new Date().toLocaleString('pt-BR')
                     };
 
                     setProdutos([...produtos, produto]);
-                    setNovoProduto({ nome: '', descricao: '', preco: '', categoria: '', imagem: '🍽️' });
+                    setNovoProduto({ 
+                        nome: '', 
+                        descricao: '', 
+                        preco: '', 
+                        categoria: '', 
+                        imagem: '🍽️',
+                        imagemUrl: '',
+                        tipoImagem: 'emoji'
+                    });
                 };
 
                 const toggleDisponibilidade = (produtoId) => {
@@ -2005,14 +2027,57 @@
                                         onChange: (e) => setNovoProduto({ ...novoProduto, categoria: e.target.value }),
                                         className: 'px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
                                     }),
-                                    React.createElement('input', {
-                                        key: 'imagem',
-                                        type: 'text',
-                                        placeholder: 'Emoji do produto',
-                                        value: novoProduto.imagem,
-                                        onChange: (e) => setNovoProduto({ ...novoProduto, imagem: e.target.value }),
-                                        className: 'px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
-                                    })
+                                    React.createElement('div', {
+                                        key: 'imagem-container',
+                                        className: 'space-y-2'
+                                    }, [
+                                        React.createElement('label', {
+                                            key: 'imagem-label',
+                                            className: 'block text-sm font-medium text-gray-700'
+                                        }, 'Imagem do Produto'),
+                                        React.createElement('select', {
+                                            key: 'tipo-imagem',
+                                            value: novoProduto.tipoImagem,
+                                            onChange: (e) => setNovoProduto({ ...novoProduto, tipoImagem: e.target.value }),
+                                            className: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
+                                        }, [
+                                            React.createElement('option', { key: 'emoji', value: 'emoji' }, 'Emoji'),
+                                            React.createElement('option', { key: 'url', value: 'url' }, 'Link da Imagem'),
+                                            React.createElement('option', { key: 'upload', value: 'upload' }, 'Upload de Arquivo')
+                                        ]),
+                                        novoProduto.tipoImagem === 'emoji' && React.createElement('input', {
+                                            key: 'emoji-input',
+                                            type: 'text',
+                                            placeholder: 'Emoji do produto (ex: 🍕)',
+                                            value: novoProduto.imagem,
+                                            onChange: (e) => setNovoProduto({ ...novoProduto, imagem: e.target.value }),
+                                            className: 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
+                                        }),
+                                        novoProduto.tipoImagem === 'url' && React.createElement('input', {
+                                            key: 'url-input',
+                                            type: 'url',
+                                            placeholder: 'URL da imagem (ex: https://exemplo.com/imagem.jpg)',
+                                            value: novoProduto.imagemUrl,
+                                            onChange: (e) => setNovoProduto({ ...novoProduto, imagemUrl: e.target.value }),
+                                            className: 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
+                                        }),
+                                        novoProduto.tipoImagem === 'upload' && React.createElement('input', {
+                                            key: 'upload-input',
+                                            type: 'file',
+                                            accept: 'image/*',
+                                            onChange: (e) => {
+                                                const file = e.target.files[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (event) => {
+                                                        setNovoProduto({ ...novoProduto, imagemUrl: event.target.result });
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            },
+                                            className: 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
+                                        })
+                                    ])
                                 ]),
                                 React.createElement('textarea', {
                                     key: 'descricao',
@@ -2043,9 +2108,29 @@
                                         className: 'flex justify-between items-start mb-2'
                                     }, [
                                         React.createElement('div', {
-                                            key: 'emoji',
-                                            className: 'text-3xl'
-                                        }, produto.imagem),
+                                            key: 'imagem-produto',
+                                            className: 'flex-shrink-0'
+                                        }, produto.tipoImagem === 'emoji' || !produto.tipoImagem ? 
+                                            React.createElement('div', {
+                                                key: 'emoji',
+                                                className: 'text-3xl'
+                                            }, produto.imagem) :
+                                            React.createElement('img', {
+                                                key: 'imagem-url',
+                                                src: produto.imagem,
+                                                alt: produto.nome,
+                                                className: 'w-12 h-12 object-cover rounded-lg border border-gray-200',
+                                                onError: (e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextSibling.style.display = 'block';
+                                                }
+                                            }),
+                                            produto.tipoImagem !== 'emoji' && produto.tipoImagem && React.createElement('div', {
+                                                key: 'fallback-emoji',
+                                                className: 'text-3xl',
+                                                style: { display: 'none' }
+                                            }, '🍽️')
+                                        ),
                                         React.createElement('button', {
                                             key: 'toggle',
                                             onClick: () => toggleDisponibilidade(produto.id),
