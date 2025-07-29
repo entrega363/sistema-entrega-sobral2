@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Entrega Sobral - Funcionando</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700">
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <script>
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+
+        // Hook para localStorage simplificado
+        function useStoredState(key, initialValue) {
+            const [state, setState] = useState(() => {
+                try {
+                    const item = localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch {
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                setState(value);
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.warn('Erro ao salvar:', error);
+                }
+            };
+
+            return [state, setValue];
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = useStoredState('current_view', 'home');
+            const [currentUser, setCurrentUser] = useStoredState('current_user', null);
+
+            // Dados básicos
+            const empresas = [
+                { id: 'emp1', nome: 'Pizza do Zé', categoria: 'Pizzaria', status: 'ativo' }
+            ];
+
+            const produtos = [
+                { id: 'prod1', nome: 'Pizza Margherita', preco: 25.90, imagem: '🍕', empresaId: 'emp1' }
+            ];
+
+            // Tela inicial
+            const HomeScreen = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen flex items-center justify-center p-4'
+                }, React.createElement('div', {
+                    className: 'bg-white rounded-lg shadow-xl p-8 w-full max-w-md'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'text-center mb-8'
+                    }, [
+                        React.createElement('div', {
+                            key: 'icon',
+                            className: 'text-6xl mb-4'
+                        }, '🚚'),
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: 'text-3xl font-bold text-gray-800 mb-2'
+                        }, 'Sistema Entrega Sobral'),
+                        React.createElement('p', {
+                            key: 'subtitle',
+                            className: 'text-gray-600'
+                        }, 'Plataforma completa de delivery')
+                    ]),
+                    React.createElement('div', {
+                        key: 'buttons',
+                        className: 'space-y-4'
+                    }, [
+                        React.createElement('button', {
+                            key: 'cliente',
+                            onClick: () => setCurrentView('cliente'),
+                            className: 'w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition duration-200 font-medium'
+                        }, '👤 Sou Cliente'),
+                        React.createElement('button', {
+                            key: 'empresa',
+                            onClick: () => setCurrentView('empresa'),
+                            className: 'w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium'
+                        }, '🏢 Sou Empresa'),
+                        React.createElement('button', {
+                            key: 'entregador',
+                            onClick: () => setCurrentView('entregador'),
+                            className: 'w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 transition duration-200 font-medium'
+                        }, '🏍️ Sou Entregador')
+                    ])
+                ]));
+            };
+
+            // Tela do cliente
+            const ClienteScreen = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen p-4'
+                }, React.createElement('div', {
+                    className: 'max-w-4xl mx-auto'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white rounded-lg shadow p-6 mb-6'
+                    }, [
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'mb-4 text-blue-600 hover:text-blue-800'
+                        }, '← Voltar'),
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800'
+                        }, '🛒 Marketplace')
+                    ]),
+                    React.createElement('div', {
+                        key: 'empresas',
+                        className: 'bg-white rounded-lg shadow p-6'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'subtitle',
+                            className: 'text-lg font-semibold mb-4'
+                        }, 'Empresas Disponíveis'),
+                        React.createElement('div', {
+                            key: 'lista',
+                            className: 'space-y-4'
+                        }, empresas.map(empresa =>
+                            React.createElement('div', {
+                                key: empresa.id,
+                                className: 'border border-gray-200 p-4 rounded-lg'
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'nome',
+                                    className: 'font-semibold text-lg'
+                                }, empresa.nome),
+                                React.createElement('p', {
+                                    key: 'categoria',
+                                    className: 'text-gray-600'
+                                }, empresa.categoria),
+                                React.createElement('div', {
+                                    key: 'produtos',
+                                    className: 'mt-4 space-y-2'
+                                }, produtos.filter(p => p.empresaId === empresa.id).map(produto =>
+                                    React.createElement('div', {
+                                        key: produto.id,
+                                        className: 'flex justify-between items-center p-2 bg-gray-50 rounded'
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'info',
+                                            className: 'flex items-center'
+                                        }, [
+                                            React.createElement('span', {
+                                                key: 'emoji',
+                                                className: 'text-xl mr-2'
+                                            }, produto.imagem),
+                                            React.createElement('span', {
+                                                key: 'nome',
+                                                className: 'font-medium'
+                                            }, produto.nome)
+                                        ]),
+                                        React.createElement('span', {
+                                            key: 'preco',
+                                            className: 'text-green-600 font-bold'
+                                        }, `R$ ${produto.preco.toFixed(2)}`)
+                                    ])
+                                ))
+                            ])
+                        ))
+                    ])
+                ]));
+            };
+
+            // Tela da empresa
+            const EmpresaScreen = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen p-4'
+                }, React.createElement('div', {
+                    className: 'max-w-4xl mx-auto'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white rounded-lg shadow p-6 mb-6'
+                    }, [
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'mb-4 text-blue-600 hover:text-blue-800'
+                        }, '← Voltar'),
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800'
+                        }, '🏢 Painel da Empresa')
+                    ]),
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'bg-white rounded-lg shadow p-6'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'subtitle',
+                            className: 'text-lg font-semibold mb-4'
+                        }, 'Adicionar Novo Produto'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-gray-600'
+                        }, 'Funcionalidade em desenvolvimento...')
+                    ])
+                ]));
+            };
+
+            // Tela do entregador
+            const EntregadorScreen = () => {
+                return React.createElement('div', {
+                    className: 'min-h-screen p-4'
+                }, React.createElement('div', {
+                    className: 'max-w-4xl mx-auto'
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'bg-white rounded-lg shadow p-6 mb-6'
+                    }, [
+                        React.createElement('button', {
+                            key: 'voltar',
+                            onClick: () => setCurrentView('home'),
+                            className: 'mb-4 text-blue-600 hover:text-blue-800'
+                        }, '← Voltar'),
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-800'
+                        }, '🏍️ Painel do Entregador')
+                    ]),
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'bg-white rounded-lg shadow p-6'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'subtitle',
+                            className: 'text-lg font-semibold mb-4'
+                        }, 'Pedidos Disponíveis'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-gray-600'
+                        }, 'Nenhum pedido disponível no momento.')
+                    ])
+                ]));
+            };
+
+            // Renderizar tela atual
+            if (currentView === 'cliente') return React.createElement(ClienteScreen);
+            if (currentView === 'empresa') return React.createElement(EmpresaScreen);
+            if (currentView === 'entregador') return React.createElement(EntregadorScreen);
+            return React.createElement(HomeScreen);
+        }
+
+        // Inicializar (mesmo padrão que funcionou no teste)
+        window.addEventListener('load', function() {
+            try {
+                const rootElement = document.getElementById('root');
+                if (rootElement && React && ReactDOM) {
+                    const root = createRoot(rootElement);
+                    root.render(React.createElement(App));
+                    console.log('✅ Sistema Entrega Sobral funcionando!');
+                } else {
+                    throw new Error('Dependências não carregaram');
+                }
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                document.getElementById('root').innerHTML = 
+                    '<div style="color: white; text-align: center; padding: 50px; font-family: Arial;">' +
+                    '<h1>⚠️ Sistema Entrega Sobral</h1>' +
+                    '<p>Erro de carregamento. Tente recarregar a página.</p>' +
+                    '</div>';
+            }
+        });
+    </script>
+</body>
+</html>
