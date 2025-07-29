@@ -216,8 +216,8 @@
                 } else if (currentUser) {
                     // Acesso sem parâmetro específico - verificar se há usuário logado
                     // Se não há view salva ou é uma view de login/cadastro, ir para dashboard
-                    if (!currentView || currentView === 'home' || currentView === 'select-type' || 
-                        currentView === 'login' || currentView === 'register-select' || 
+                    if (!currentView || currentView === 'home' || currentView === 'select-type' ||
+                        currentView === 'login' || currentView === 'register-select' ||
                         currentView.includes('cadastro-')) {
                         setCurrentView('dashboard');
                     }
@@ -2025,14 +2025,32 @@
                                         onChange: (e) => setNovoProduto({ ...novoProduto, preco: e.target.value }),
                                         className: 'px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
                                     }),
-                                    React.createElement('input', {
+                                    React.createElement('select', {
                                         key: 'categoria',
-                                        type: 'text',
-                                        placeholder: 'Categoria',
                                         value: novoProduto.categoria,
                                         onChange: (e) => setNovoProduto({ ...novoProduto, categoria: e.target.value }),
                                         className: 'px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
-                                    }),
+                                    }, [
+                                        React.createElement('option', { key: 'default', value: '' }, 'Selecione uma categoria'),
+                                        React.createElement('option', { key: 'pizza', value: 'Pizza' }, '🍕 Pizza'),
+                                        React.createElement('option', { key: 'hamburguer', value: 'Hambúrguer' }, '🍔 Hambúrguer'),
+                                        React.createElement('option', { key: 'lanche', value: 'Lanche' }, '🥪 Lanche'),
+                                        React.createElement('option', { key: 'bebida', value: 'Bebida' }, '🥤 Bebida'),
+                                        React.createElement('option', { key: 'sobremesa', value: 'Sobremesa' }, '🍰 Sobremesa'),
+                                        React.createElement('option', { key: 'comida-brasileira', value: 'Comida Brasileira' }, '🍛 Comida Brasileira'),
+                                        React.createElement('option', { key: 'comida-italiana', value: 'Comida Italiana' }, '🍝 Comida Italiana'),
+                                        React.createElement('option', { key: 'comida-japonesa', value: 'Comida Japonesa' }, '🍣 Comida Japonesa'),
+                                        React.createElement('option', { key: 'comida-mexicana', value: 'Comida Mexicana' }, '🌮 Comida Mexicana'),
+                                        React.createElement('option', { key: 'frutos-do-mar', value: 'Frutos do Mar' }, '🦐 Frutos do Mar'),
+                                        React.createElement('option', { key: 'salada', value: 'Salada' }, '🥗 Salada'),
+                                        React.createElement('option', { key: 'sopa', value: 'Sopa' }, '🍲 Sopa'),
+                                        React.createElement('option', { key: 'cafe', value: 'Café' }, '☕ Café'),
+                                        React.createElement('option', { key: 'acai', value: 'Açaí' }, '🍇 Açaí'),
+                                        React.createElement('option', { key: 'tapioca', value: 'Tapioca' }, '🫓 Tapioca'),
+                                        React.createElement('option', { key: 'pastel', value: 'Pastel' }, '🥟 Pastel'),
+                                        React.createElement('option', { key: 'churros', value: 'Churros' }, '🍩 Churros'),
+                                        React.createElement('option', { key: 'outros', value: 'Outros' }, '🍽️ Outros')
+                                    ]),
                                     React.createElement('div', {
                                         key: 'imagem-container',
                                         className: 'space-y-2'
