@@ -3493,23 +3493,23 @@
             }, 'Carregando...'));
         }
 
-        // Aguardar carregamento completo (mesmo padrão do teste que funcionou)
+        // Inicializar aplicação (padrão que funciona)
         window.addEventListener('load', function() {
             try {
                 const rootElement = document.getElementById('root');
                 if (rootElement && React && ReactDOM) {
                     const root = createRoot(rootElement);
                     root.render(React.createElement(App));
-                    console.log('✅ Sistema Entrega Sobral carregado com sucesso!');
+                    console.log('Sistema Entrega Sobral carregado com sucesso!');
                 } else {
-                    throw new Error('Elementos necessários não encontrados');
+                    throw new Error('Elementos necessarios nao encontrados');
                 }
             } catch (error) {
-                console.error('❌ Erro ao carregar Sistema Entrega Sobral:', error);
+                console.error('Erro ao carregar Sistema Entrega Sobral:', error);
                 document.getElementById('root').innerHTML = 
                     '<div style="color: white; text-align: center; padding: 50px; font-family: Arial;">' +
-                    '<h1>⚠️ Sistema Entrega Sobral</h1>' +
-                    '<p>Erro de carregamento. Recarregue a página.</p>' +
+                    '<h1>Sistema Entrega Sobral</h1>' +
+                    '<p>Erro de carregamento. Recarregue a pagina.</p>' +
                     '<p style="font-size: 12px; margin-top: 20px;">Erro: ' + error.message + '</p>' +
                     '</div>';
             }
