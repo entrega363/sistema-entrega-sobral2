@@ -3497,8 +3497,25 @@
             }, 'Carregando...'));
         }
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
+        // Aguardar o DOM carregar completamente
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const rootElement = document.getElementById('root');
+                if (rootElement && React && ReactDOM) {
+                    const root = createRoot(rootElement);
+                    root.render(React.createElement(App));
+                } else {
+                    console.error('Elementos necessários não encontrados:', {
+                        rootElement: !!rootElement,
+                        React: !!React,
+                        ReactDOM: !!ReactDOM
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao inicializar aplicação:', error);
+                document.getElementById('root').innerHTML = '<div style="color: white; text-align: center; padding: 50px;">Erro ao carregar aplicação. Verifique o console.</div>';
+            }
+        });
     </script>
 </body>
 
