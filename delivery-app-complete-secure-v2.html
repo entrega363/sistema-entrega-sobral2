@@ -505,20 +505,6 @@
                         ]),
 
                         React.createElement('div', {
-                            key: 'login-btn',
-                            className: 'mb-6'
-                        }, [
-                            React.createElement('button', {
-                                key: 'voltar',
-                                onClick: () => {
-                                    const baseUrl = window.location.origin + window.location.pathname;
-                                    window.location.href = baseUrl;
-                                },
-                                className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
-                            }, '← Voltar')
-                        ]),
-
-                        React.createElement('div', {
                             key: 'divider',
                             className: 'text-center mb-6'
                         }, [
@@ -560,6 +546,20 @@
                                 href: './admin-login.html',
                                 className: 'text-xs text-gray-500 hover:text-gray-700 transition duration-200'
                             }, '🔐 Acesso Administrativo')
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'voltar-btn',
+                            className: 'mt-6'
+                        }, [
+                            React.createElement('button', {
+                                key: 'voltar',
+                                onClick: () => {
+                                    const baseUrl = window.location.origin + window.location.pathname;
+                                    window.location.replace(baseUrl);
+                                },
+                                className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
+                            }, '← Voltar')
                         ])
                     ])
                 );
