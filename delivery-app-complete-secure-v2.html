@@ -510,7 +510,10 @@
                         }, [
                             React.createElement('button', {
                                 key: 'voltar',
-                                onClick: () => setCurrentView('home'),
+                                onClick: () => {
+                                    const baseUrl = window.location.origin + window.location.pathname;
+                                    window.location.href = baseUrl;
+                                },
                                 className: 'w-full bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition duration-200 font-medium'
                             }, '← Voltar')
                         ]),
@@ -913,8 +916,8 @@
                                     key: 'submit',
                                     type: 'submit',
                                     className: `w-full py-3 px-4 rounded-md font-medium transition duration-200 ${typeInfo.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500' :
-                                            typeInfo.color === 'green' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
-                                                'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500'
+                                        typeInfo.color === 'green' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
+                                            'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500'
                                         } text-white focus:outline-none focus:ring-2`
                                 }, `Entrar como ${typeInfo.title}`),
                                 React.createElement('button', {
@@ -1421,10 +1424,10 @@
                                         React.createElement('span', {
                                             key: 'status',
                                             className: `px-3 py-1 rounded-full text-sm font-medium ${pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
-                                                    pedido.status === 'em_preparo' ? 'bg-yellow-100 text-yellow-800' :
-                                                        pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
-                                                            pedido.status === 'em_entrega' ? 'bg-purple-100 text-purple-800' :
-                                                                'bg-gray-100 text-gray-800'
+                                                pedido.status === 'em_preparo' ? 'bg-yellow-100 text-yellow-800' :
+                                                    pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                        pedido.status === 'em_entrega' ? 'bg-purple-100 text-purple-800' :
+                                                            'bg-gray-100 text-gray-800'
                                                 }`
                                         }, pedido.status.replace('_', ' ').toUpperCase()),
                                         React.createElement('p', {
@@ -1499,16 +1502,16 @@
                                 key: 'marketplace-tab',
                                 onClick: () => setActiveTab('marketplace'),
                                 className: `px-4 py-2 rounded-md font-medium transition duration-200 ${activeTab === 'marketplace'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100'
                                     }`
                             }, '🛒 Marketplace'),
                             React.createElement('button', {
                                 key: 'pedidos-tab',
                                 onClick: () => setActiveTab('pedidos'),
                                 className: `px-4 py-2 rounded-md font-medium transition duration-200 ${activeTab === 'pedidos'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100'
                                     }`
                             }, `📋 Meus Pedidos (${meusPedidos.length})`)
                         ]),
@@ -1685,9 +1688,9 @@
                                         React.createElement('span', {
                                             key: 'status',
                                             className: `px-2 py-1 rounded-full text-xs font-medium ${pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
-                                                    pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
-                                                        pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
-                                                            'bg-gray-100 text-gray-800'
+                                                pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
+                                                    pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                        'bg-gray-100 text-gray-800'
                                                 }`
                                         }, pedido.status.toUpperCase()),
                                         React.createElement('p', {
@@ -1837,24 +1840,24 @@
                                     key: 'overview-tab',
                                     onClick: () => setActiveTab('overview'),
                                     className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview'
-                                            ? 'border-green-500 text-green-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        ? 'border-green-500 text-green-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
                                         }`
                                 }, '📊 Visão Geral'),
                                 React.createElement('button', {
                                     key: 'pedidos-tab',
                                     onClick: () => setActiveTab('pedidos'),
                                     className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'pedidos'
-                                            ? 'border-green-500 text-green-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        ? 'border-green-500 text-green-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
                                         }`
                                 }, '📋 Pedidos'),
                                 React.createElement('button', {
                                     key: 'produtos-tab',
                                     onClick: () => setActiveTab('produtos'),
                                     className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'produtos'
-                                            ? 'border-green-500 text-green-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        ? 'border-green-500 text-green-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
                                         }`
                                 }, '🍽️ Produtos')
                             ])
@@ -1921,10 +1924,10 @@
                                                 React.createElement('span', {
                                                     key: 'status',
                                                     className: `px-3 py-1 rounded-full text-sm font-medium ${pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
-                                                            pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
-                                                                pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
-                                                                    pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
-                                                                        'bg-gray-100 text-gray-800'
+                                                        pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
+                                                            pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                                pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
+                                                                    'bg-gray-100 text-gray-800'
                                                         }`
                                                 }, pedido.status.replace('_', ' ').toUpperCase()),
                                                 React.createElement('p', {
@@ -2058,8 +2061,8 @@
                                             key: 'toggle',
                                             onClick: () => toggleDisponibilidade(produto.id),
                                             className: `px-2 py-1 rounded text-xs font-medium ${produto.disponivel
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-red-100 text-red-800'
                                                 }`
                                         }, produto.disponivel ? 'Disponível' : 'Indisponível')
                                     ]),
@@ -2234,8 +2237,8 @@
                                     key: 'toggle-btn',
                                     onClick: () => setStatusDisponivel(!statusDisponivel),
                                     className: `px-4 py-2 rounded-md font-medium transition duration-200 ${statusDisponivel
-                                            ? 'bg-green-600 text-white hover:bg-green-700'
-                                            : 'bg-red-600 text-white hover:bg-red-700'
+                                        ? 'bg-green-600 text-white hover:bg-green-700'
+                                        : 'bg-red-600 text-white hover:bg-red-700'
                                         }`
                                 }, statusDisponivel ? '✅ Disponível' : '❌ Indisponível')
                             ])
@@ -2315,16 +2318,16 @@
                                 key: 'pedidos-tab',
                                 onClick: () => setActiveTab('pedidos'),
                                 className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'pedidos'
-                                        ? 'border-orange-500 text-orange-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-orange-500 text-orange-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`
                             }, `📦 Pedidos Disponíveis (${pedidosDisponiveis.length})`),
                             React.createElement('button', {
                                 key: 'minhas-tab',
                                 onClick: () => setActiveTab('minhas'),
                                 className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'minhas'
-                                        ? 'border-orange-500 text-orange-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-orange-500 text-orange-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`
                             }, `🚚 Minhas Entregas (${meusPedidos.length})`)
                         ])
@@ -2419,8 +2422,8 @@
                                             onClick: () => aceitarPedido(pedido.id),
                                             disabled: !statusDisponivel,
                                             className: `w-full py-2 px-4 rounded-md font-medium transition duration-200 ${statusDisponivel
-                                                    ? 'bg-orange-600 text-white hover:bg-orange-700'
-                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                ? 'bg-orange-600 text-white hover:bg-orange-700'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                 }`
                                         }, statusDisponivel ? '🚚 Aceitar Entrega' : '❌ Indisponível')
                                     ])
@@ -2486,8 +2489,8 @@
                                                 React.createElement('span', {
                                                     key: 'status',
                                                     className: `px-3 py-1 rounded-full text-sm font-medium ${pedido.status === 'saiu_entrega' ? 'bg-orange-100 text-orange-800' :
-                                                            pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
-                                                                'bg-gray-100 text-gray-800'
+                                                        pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
+                                                            'bg-gray-100 text-gray-800'
                                                         }`
                                                 }, pedido.status === 'saiu_entrega' ? 'EM TRÂNSITO' :
                                                     pedido.status === 'entregue' ? 'ENTREGUE' : pedido.status.toUpperCase()),
@@ -2647,32 +2650,32 @@
                                 key: 'overview-tab',
                                 onClick: () => setActiveTab('overview'),
                                 className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview'
-                                        ? 'border-purple-500 text-purple-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-purple-500 text-purple-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`
                             }, '📊 Visão Geral'),
                             React.createElement('button', {
                                 key: 'empresas-tab',
                                 onClick: () => setActiveTab('empresas'),
                                 className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'empresas'
-                                        ? 'border-purple-500 text-purple-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-purple-500 text-purple-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`
                             }, '🏢 Empresas'),
                             React.createElement('button', {
                                 key: 'usuarios-tab',
                                 onClick: () => setActiveTab('usuarios'),
                                 className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'usuarios'
-                                        ? 'border-purple-500 text-purple-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-purple-500 text-purple-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`
                             }, '👥 Usuários'),
                             React.createElement('button', {
                                 key: 'pedidos-tab',
                                 onClick: () => setActiveTab('pedidos'),
                                 className: `py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'pedidos'
-                                        ? 'border-purple-500 text-purple-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-purple-500 text-purple-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`
                             }, '📦 Pedidos')
                         ])
@@ -2804,8 +2807,8 @@
                                         React.createElement('span', {
                                             key: 'status',
                                             className: `px-3 py-1 rounded-full text-sm font-medium ${empresa.status === 'ativo' ? 'bg-green-100 text-green-800' :
-                                                    empresa.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-red-100 text-red-800'
+                                                empresa.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
                                                 }`
                                         }, empresa.status.toUpperCase())
                                     ])
@@ -2938,11 +2941,11 @@
                                             React.createElement('span', {
                                                 key: 'status',
                                                 className: `px-3 py-1 rounded-full text-sm font-medium ${pedido.status === 'disponivel' ? 'bg-blue-100 text-blue-800' :
-                                                        pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
-                                                            pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
-                                                                pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
-                                                                    pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
-                                                                        'bg-gray-100 text-gray-800'
+                                                    pedido.status === 'aceito' ? 'bg-yellow-100 text-yellow-800' :
+                                                        pedido.status === 'pronto' ? 'bg-green-100 text-green-800' :
+                                                            pedido.status === 'saiu_entrega' ? 'bg-purple-100 text-purple-800' :
+                                                                pedido.status === 'entregue' ? 'bg-green-100 text-green-800' :
+                                                                    'bg-gray-100 text-gray-800'
                                                     }`
                                             }, pedido.status.replace('_', ' ').toUpperCase()),
                                             React.createElement('p', {
